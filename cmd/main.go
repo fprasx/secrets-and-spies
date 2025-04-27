@@ -1,50 +1,167 @@
 package main
 
-//	"github.com/fprasx/secrets-and-spies/internal/ff_arith"
+import (
+	"fmt"
 
+	"github.com/fprasx/secrets-and-spies/internal/bgw"
+	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
+)
+
+// test for reconstruction
+func test1() int {
+	p := 29
+	points := [][2]ffarith.FFNum{
+		{ffarith.NewFFNum(p, 1), ffarith.NewFFNum(p, 10)},
+		{ffarith.NewFFNum(p, 2), ffarith.NewFFNum(p, 21)},
+		{ffarith.NewFFNum(p, 3), ffarith.NewFFNum(p, 9)},
+	}
+
+	secret, err := bgw.ReconstructSecret(points)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Secret is:", secret.Int())
+	if secret.Int() != 5 {
+		return secret.Int()
+	}
+	return 0
+}
+
+// test for sharing a secret
+func testShare() int {
+	p := 29
+	secret := ffarith.NewFFNum(p, 28)
+	shares, err := bgw.ShareSecret(secret, 10, 20)
+	if err != nil {
+		panic(err)
+	}
+	recon, err := bgw.ReconstructSecret(shares)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Secret is:", recon.Int())
+	if secret.Int() != secret.Int() {
+		return secret.Int()
+	}
+	return 0
+}
+func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
+	p := x.P()
+	result := ffarith.NewFFNum(p, 0)
+	power := ffarith.NewFFNum(p, 1) // x^0
+
+	for _, coeff := range coeffs {
+		result = result.Plus(coeff.Times(power))
+		power = power.Times(x) // next power of x
+	}
+
+	return result
+}
+func testDotProduct() int {
+	p := 29
+	t := 2
+	n := 5
+	noCities := 3
+	a := []ffarith.FFNum{
+		ffarith.NewFFNum(p, 0),
+		ffarith.NewFFNum(p, 1),
+		ffarith.NewFFNum(p, 0),
+	}
+	shares, err := bgw.ShareLocation(2, noCities, t, n, p)
+	if err != nil {
+		panic(err)
+	}
+	newShares := make([][2]ffarith.FFNum, n)
+	for i := 0; i < n; i++ {
+		column := make([][2]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			column[j] = shares[j][i]
+		}
+		fmt.Println()
+		newShares[i] = bgw.DotProductConstant(a, column, i)
+	}
+	secret, err := bgw.ReconstructSecret(newShares)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Secret is:", secret.Int())
+	if secret.Int() != 0 {
+		return secret.Int()
+	}
+	return 0
+}
+
+// Polynomial is x^4+x^3+2x^2+3x+1
+// Reduced is 2x^2+3x+1
+func testDegreeReduce() int {
+	p := 29
+	poly := []ffarith.FFNum{
+		ffarith.NewFFNum(p, 1),
+		ffarith.NewFFNum(p, 3),
+		ffarith.NewFFNum(p, 2),
+		ffarith.NewFFNum(p, 1),
+		ffarith.NewFFNum(p, 1),
+	}
+	reducedpoly := []ffarith.FFNum{
+		ffarith.NewFFNum(p, 1),
+		ffarith.NewFFNum(p, 3),
+		ffarith.NewFFNum(p, 2),
+	}
+	g := []ffarith.FFNum{
+		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 1)).Int()),
+		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 2)).Int()),
+		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 3)).Int()),
+		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 4)).Int()),
+		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 5)).Int()),
+	}
+	fmt.Println("old shares:")
+	for i, val := range g {
+		fmt.Printf("Party %d: %d\n", i+1, val.Int())
+	}
+	newg, err := bgw.DegreeReduce(g, 2) // Reduce to degree 2
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("New reduced shares:")
+	for i, val := range newg {
+		fmt.Printf("Party %d: %d\n", i+1, val.Int())
+		if val.Int() != evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int() {
+			fmt.Printf("FAIL, %d expected %d, got %d\n", i+1, evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int(), val.Int())
+			return val.Int()
+		}
+	}
+	return 0
+}
 func main() {
-	// fmt.Println("Hello, World!")
-	// secret := []byte("This is a secret 🤫")
-	// primitivePoly := 0x11d
-	// nshares := 6
-	// threshold := 2
+	fmt.Println("Running test...")
+	// p := 29
+	// points := [][2]ffarith.FFNum{
+	// 	{ffarith.NewFFNum(p, 1), ffarith.NewFFNum(p, 2)},
+	// 	{ffarith.NewFFNum(p, 2), ffarith.NewFFNum(p, 0)},
+	// 	{ffarith.NewFFNum(p, 3), ffarith.NewFFNum(p, 3)},
+	// }
 
-	// // compute shares
-	// shamir, err := NewShamirSecret(primitivePoly, nshares, threshold, secret)
+	// secret, err := bgw.ReconstructSecret(points)
 	// if err != nil {
-	// 	t.Fatal(err)
+	// 	panic(err)
 	// }
-
-	// // reconstruct secret from shares
-	// recovered_secret, err := RecoverSecret(shamir.shares[0:2])
-	// if err != nil {
-	// 	t.Fatal(err)
+	// fmt.Println("Secret is:", secret.Int())
+	// val := testShare()
+	// if val != 0 {
+	// 	fmt.Printf("FAIL bad secret %d \n", val)
+	// 	return
 	// }
-
-	// // check that everything went well
-	// if !bytes.Equal(secret, recovered_secret) {
-	// 	t.Fatalf("have %v, want %v", recovered_secret, secret)
+	// val = testDegreeReduce()
+	// if val != 0 {
+	// 	fmt.Printf("FAIL bad expected %d \n", val)
+	// 	return
 	// }
-
-	// // reconstruct secret from different shares
-	// recovered_secret, err = RecoverSecret(shamir.shares[2:4])
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// // check that everything went well
-	// if !bytes.Equal(secret, recovered_secret) {
-	// 	t.Fatalf("have %v, want %v", recovered_secret, secret)
-	// }
-
-	// // reconstruct secret from different shares
-	// recovered_secret, err = RecoverSecret(shamir.shares[4:6])
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// // check that everything went well
-	// if !bytes.Equal(secret, recovered_secret) {
-	// 	t.Fatalf("have %v, want %v", recovered_secret, secret)
-	// }
+	val := testDotProduct()
+	if val != 0 {
+		fmt.Printf("FAIL bad expected %d \n", val)
+		return
+	}
+	fmt.Println("PASS")
 }

@@ -1,6 +1,8 @@
 package ffarith
 
-import "github.com/fprasx/secrets-and-spies/internal/utils"
+import (
+	"github.com/fprasx/secrets-and-spies/internal/utils"
+)
 
 type FFNum struct {
 	p   int
@@ -75,4 +77,7 @@ func (a FFNum) ToThe(power uint) FFNum {
 
 func (a FFNum) Int() int {
 	return a.val
+}
+func (a FFNum) P() int {
+	return a.p
 }

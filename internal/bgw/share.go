@@ -1,86 +1,98 @@
 package bgw
 
 import (
-	"encoding/base64"
+	"crypto/rand"
 	"fmt"
-	"regexp"
-	"strconv"
+	"math/big"
+
+	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
 )
 
-const SharePrefix string = "shamir"
+// ShareSecret constructs shares according to Shamir's algorithm
+func ShareSecret(secret ffarith.FFNum, t int, n int) ([][2]ffarith.FFNum, error) {
+	if t > n {
+		return nil, fmt.Errorf("threshold cannot be greater than number of parties")
+	}
 
-type Share struct {
-	secret_id     string
-	primitivePoly int64
-	x             GfElement   // x coordinate
-	y             []GfElement // y coordinates
-}
+	p := secret.P()
 
-func NewShare(secret_id string, primitivePoly int64, x GfElement, y []GfElement) Share {
-	return Share{secret_id: secret_id, primitivePoly: primitivePoly, x: x, y: y}
-}
+	// Random coefficients: a_1 to a_{t-1}
+	coeffs := make([]ffarith.FFNum, t)
+	coeffs[0] = secret // constant term is the secret
 
-func NewSharesFromString(input string) ([]Share, error) {
-	r := regexp.MustCompile(`shamir-(\w+)-(\w+)-(\w+)-([\w\+\/]+)`)
-
-	shares := make([]Share, 0)
-	matches := r.FindAllStringSubmatch(input, -1)
-	for _, match := range matches {
-
-		secret_id := string(match[1])
-
-		primitivePoly, err := strconv.ParseInt(string(match[2]), 16, 64)
+	for i := 1; i < t; i++ {
+		randVal, err := rand.Int(rand.Reader, big.NewInt(int64(p)))
 		if err != nil {
 			return nil, err
 		}
+		coeffs[i] = ffarith.NewFFNum(p, int(randVal.Int64()))
+	}
 
-		xdata, err := strconv.ParseInt(string(match[3]), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		ydata, err := base64.RawStdEncoding.DecodeString(string(match[4]))
-		if err != nil {
-			return nil, err
-		}
-
-		x := GfElement(xdata)
-		y := make([]GfElement, len(ydata))
-		for i := range ydata {
-			y[i] = GfElement(ydata[i])
-		}
-
-		shares = append(shares, NewShare(secret_id, primitivePoly, x, y))
+	// Generate shares (i, f(i))
+	shares := make([][2]ffarith.FFNum, n)
+	for i := 1; i <= n; i++ {
+		x := ffarith.NewFFNum(p, i)
+		y := evaluatePolynomial(coeffs, x)
+		shares[i-1] = [2]ffarith.FFNum{x, y}
 	}
 
 	return shares, nil
-
 }
 
-func (share Share) ShareLabel() string {
-	return fmt.Sprintf("%s-%s-%x-%s", SharePrefix, share.secret_id, share.primitivePoly, share.GetXString())
-}
+// DegreeReduce reduces the degree of shares using Vandermonde matrices
+func DegreeReduce(g []ffarith.FFNum, t int) ([]ffarith.FFNum, error) {
+	n := len(g)
+	p := g[0].P()
 
-func (share Share) String() string {
-	return fmt.Sprintf("%s-%s", share.ShareLabel(), share.GetYString())
-}
-
-func (share Share) GetSecretId() string {
-	return share.secret_id
-}
-
-func (share Share) GetPrimitivePoly() int64 {
-	return share.primitivePoly
-}
-
-func (share Share) GetXString() string {
-	return fmt.Sprintf("%d", share.x)
-}
-
-func (share Share) GetYString() string {
-	b := make([]byte, len(share.y))
-	for i := range b {
-		b[i] = byte(share.y[i])
+	// Build V
+	V := make([][]ffarith.FFNum, n)
+	for i := 0; i < n; i++ {
+		V[i] = make([]ffarith.FFNum, n)
+		x := ffarith.NewFFNum(p, i+1) // Party indices are 1-based
+		power := ffarith.NewFFNum(p, 1)
+		for j := 0; j < n; j++ {
+			V[i][j] = power
+			power = power.Times(x)
+		}
 	}
-	return base64.RawStdEncoding.EncodeToString(b)
+
+	// Build P
+	P := make([][]ffarith.FFNum, n)
+	for i := 0; i < n; i++ {
+		P[i] = make([]ffarith.FFNum, n)
+		for j := 0; j < n; j++ {
+			if i == j && i <= t {
+				P[i][j] = ffarith.NewFFNum(p, 1)
+			} else {
+				P[i][j] = ffarith.NewFFNum(p, 0)
+			}
+		}
+	}
+
+	// Compute V inverse
+	Vinv, err := invertMatrix(V)
+	if err != nil {
+		return nil, fmt.Errorf("failed to invert V: %v", err)
+	}
+
+	// Compute A = V * P * Vinv
+	VP := multiplyMatrices(V, P)
+	A := multiplyMatrices(VP, Vinv)
+
+	// Represent g as a column vector
+	gvec := make([][]ffarith.FFNum, n)
+	for i := 0; i < n; i++ {
+		gvec[i] = []ffarith.FFNum{g[i]}
+	}
+
+	// Compute new_g = A * g
+	newgMat := multiplyMatrices(A, gvec)
+
+	// Extract result
+	newg := make([]ffarith.FFNum, n)
+	for i := 0; i < n; i++ {
+		newg[i] = newgMat[i][0]
+	}
+
+	return newg, nil
 }

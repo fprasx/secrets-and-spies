@@ -1,163 +1,120 @@
 package bgw
 
 import (
-	crand "crypto/rand"
-	"encoding/base32"
 	"errors"
 	"fmt"
-	"math/rand/v2"
+
+	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
 )
 
-var ErrThresholdTooLarge error = errors.New("threshold cannot exceed number of shares")
-var ErrNonPrimitivePolynomial error = errors.New("supplied polynomial cannot be primitive")
-var ErrMismatchedSecretID error = errors.New("secret ID's don't match")
-var ErrInconsistentLength error = errors.New("length of shares is inconsistent")
-var ErrDuplicateShare error = errors.New("duplicate shares provided")
-
 type Shamir struct {
-	id     string  // unique identifier to ensure shares were derived from same secret
-	field  Gf2m    // field over which to operate
-	shares []Share // individual shares to distribute
+	share  ffarith.FFNum
+	index  ffarith.FFNum
+	degree ffarith.FFNum
 }
 
-func (shamir Shamir) String() string {
-	s := fmt.Sprintf("Secret %s\n", shamir.id)
-	s += "Shares:\n"
-	for n := range shamir.shares {
-		s += fmt.Sprintf("  %s\n", shamir.ShareString(n))
+// evaluatePolynomial evaluates the polynomial at point x
+func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
+	p := x.P()
+	result := ffarith.NewFFNum(p, 0)
+	power := ffarith.NewFFNum(p, 1) // x^0
+
+	for _, coeff := range coeffs {
+		result = result.Plus(coeff.Times(power))
+		power = power.Times(x) // next power of x
 	}
-	return s[:len(s)-1]
+
+	return result
 }
 
-func (shamir Shamir) GetId() string {
-	return shamir.id
-}
-
-func (shamir Shamir) ShareString(n int) string {
-	return fmt.Sprintf("%s-%s", shamir.shares[n].ShareLabel(), shamir.shares[n].GetYString())
-}
-
-func (shamir Shamir) GetShares() []Share {
-	return shamir.shares
-}
-
-func NewShamirSecret(primitivePoly int, nshares int, threshold int, secret []byte) (*Shamir, error) {
-
-	// input validation
-	if threshold > nshares {
-		return nil, ErrThresholdTooLarge
+// assumes t-1 degree poly
+func ReconstructSecret(points [][2]ffarith.FFNum) (ffarith.FFNum, error) {
+	t := len(points)
+	if t == 0 {
+		return ffarith.FFNum{}, fmt.Errorf("no points provided")
 	}
-	if (primitivePoly & 0b1) != 1 {
-		return nil, ErrNonPrimitivePolynomial
-	}
-	// TODO better checking that polynomials are actually primitive
+	p := points[0][0].P()
 
-	// generate random ID for secret shares
-	idbytes := make([]byte, 5)
-	if _, err := crand.Read(idbytes); err != nil {
-		return nil, err
-	}
+	secret := ffarith.NewFFNum(p, 0)
 
-	// initialize the data needed for Shamir's secret sharing scheme
-	shamir := &Shamir{
-		id:     base32.StdEncoding.EncodeToString(idbytes),
-		field:  NewField(primitivePoly),
-		shares: make([]Share, nshares),
-	}
+	for k := 0; k < t; k++ {
+		lambda := ffarith.NewFFNum(p, 1)
+		xk := points[k][0]
 
-	// initialize each individual share
-	for i := range shamir.shares {
-		shamir.shares[i].secret_id = shamir.id
-		shamir.shares[i].primitivePoly = int64(primitivePoly)
-		shamir.shares[i].x = GfElement(i + 1)
-		shamir.shares[i].y = make([]GfElement, len(secret))
-	}
-
-	// choose new polynomials for each byte in secret
-	for i := 0; i < len(secret); i++ {
-
-		// choose random polynomial
-		p := make([]GfElement, threshold)
-		for i := range p {
-			p[i] = GfElement(rand.IntN(shamir.field.GetNelements()))
-		}
-
-		// set constant term to be secret
-		p[0] = GfElement(secret[i])
-
-		// compute value of polynomial for each of the shares
-		for _, share := range shamir.shares {
-			share.y[i] = shamir.field.EvaluatePolynomial(p, share.x)
-		}
-	}
-
-	return shamir, nil
-}
-
-func RecoverSecret(shares []Share) ([]byte, error) {
-
-	// check that shares all have same id
-	var secret_id string
-	for i := range shares {
-		if i == 0 {
-			secret_id = shares[0].secret_id
-		} else {
-			if shares[i].secret_id != secret_id {
-				return nil, ErrMismatchedSecretID
+		for j := 0; j < t; j++ {
+			if j == k {
+				continue
 			}
-		}
-	}
-
-	// check that shares are all same length
-	len_secret := len(shares[0].y)
-	for _, share := range shares {
-		if len(share.y) != len_secret {
-			return nil, ErrInconsistentLength
-		}
-	}
-
-	// initialize data
-	field := NewField(int(shares[0].GetPrimitivePoly()))
-	n_shares := len(shares)
-	secret := make([]byte, len_secret)
-
-	x := make([]GfElement, n_shares)
-	existingxs := make(map[GfElement]any, 0)
-	for s, share := range shares {
-		if _, ok := existingxs[share.x]; ok {
-			return nil, ErrDuplicateShare
-		}
-		x[s] = share.x
-		existingxs[share.x] = nil
-	}
-
-	// reconstruct secret
-	for i := 0; i < len_secret; i++ {
-		y := make([]GfElement, n_shares)
-		for s, share := range shares {
-			y[s] = share.y[i]
+			xj := points[j][0]
+			num := xj
+			den := xj.Minus(xk)
+			lambda = lambda.Times(num.Times(den.Inv()))
 		}
 
-		// compute L(0) by summing terms l_j(0)
-		L := GfElement(0)
-
-		for j := 0; j < n_shares; j++ {
-			ell := GfElement(1)
-			for k := 0; k < n_shares; k++ {
-				if k == j {
-					continue
-				}
-				x, err := field.Divide(field.Subtract(GfElement(0), x[k]), field.Subtract(x[j], x[k]))
-				if err != nil {
-					return nil, err
-				}
-				ell = field.Multiply(ell, x)
-			}
-			L = field.Add(L, field.Multiply(y[j], ell))
-		}
-
-		secret[i] = byte(L)
+		secret = secret.Plus(lambda.Times(points[k][1]))
 	}
 
 	return secret, nil
+}
+
+// SolveLinearSystemFF solves A * x = b over a finite field
+func SolveLinearSystemFF(A [][]ffarith.FFNum, b []ffarith.FFNum) ([]ffarith.FFNum, error) {
+	n := len(A)
+
+	// Augment A with b
+	for i := 0; i < n; i++ {
+		A[i] = append(A[i], b[i])
+	}
+
+	// Forward elimination
+	for i := 0; i < n; i++ {
+		fmt.Printf("\nMatrix after elimination step %d:\n", i)
+		for _, row := range A {
+			for _, elem := range row {
+				fmt.Printf("%d ", elem.Int())
+			}
+			fmt.Println()
+		}
+		// Find pivot row
+		pivotRow := i
+		for k := i + 1; k < n; k++ {
+			if A[k][i].Int() != 0 {
+				pivotRow = k
+				break
+			}
+		}
+		// Swap rows if needed
+		A[i], A[pivotRow] = A[pivotRow], A[i]
+
+		// Check for singularity
+		if A[i][i].Int() == 0 {
+			return nil, errors.New("singular matrix: no solution")
+		}
+
+		// Normalize pivot row
+		invPivot := A[i][i].Inv()
+		for j := i; j <= n; j++ {
+			A[i][j] = A[i][j].Times(invPivot)
+		}
+
+		// Eliminate below
+		for k := i + 1; k < n; k++ {
+			factor := A[k][i]
+			for j := i; j <= n; j++ {
+				A[k][j] = A[k][j].Minus(factor.Times(A[i][j]))
+			}
+		}
+
+	}
+
+	// Back substitution
+	x := make([]ffarith.FFNum, n)
+	for i := n - 1; i >= 0; i-- {
+		x[i] = A[i][n]
+		for j := i + 1; j < n; j++ {
+			x[i] = x[i].Minus(A[i][j].Times(x[j]))
+		}
+	}
+
+	return x, nil
 }
