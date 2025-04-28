@@ -7,6 +7,118 @@ import (
 	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
 )
 
+// example for checking if moved onto city
+func testMoveCheck() int {
+	p := 29
+	t := 2
+	n := 5
+	noCities := 4
+	tempshares := make([][][2]ffarith.FFNum, noCities)
+	for i := 0; i < noCities; i++ {
+		tempshares[i] = make([][2]ffarith.FFNum, n)
+	}
+	oldloc, err := bgw.ShareLocation(3, noCities, t, n, p)
+	if err != nil {
+		panic(err)
+	}
+	newloc, err := bgw.ShareLocation(1, noCities, t, n, p)
+	if err != nil {
+		panic(err)
+	}
+	endshares := make([][2]ffarith.FFNum, n)
+
+	for i := 0; i < n; i++ {
+		columnold := make([][2]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			columnold[j] = oldloc[j][i]
+		}
+		columnnew := make([][2]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			columnnew[j] = newloc[j][i]
+		}
+		fmt.Println()
+		endshares[i] = bgw.DotProductShares(columnold, columnnew, i)
+
+	}
+
+	res, err := bgw.ReconstructSecret(endshares)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Verdict is:", res.Int())
+	if res.Int() != 1 {
+		return -1
+	}
+	return 0
+}
+
+// example of move validation
+func testMoveValidation() int {
+	p := 29
+	t := 2
+	n := 5
+	noCities := 4
+	//0 - 3
+	//1 - 2
+	g := [][]int{
+		{1, 0, 0, 1},
+		{0, 1, 1, 0},
+		{0, 1, 1, 0},
+		{1, 0, 0, 1},
+	}
+	graph := make([][]ffarith.FFNum, noCities)
+	tempshares := make([][][2]ffarith.FFNum, noCities)
+	for i := 0; i < noCities; i++ {
+		tempshares[i] = make([][2]ffarith.FFNum, n)
+		graph[i] = make([]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			graph[i][j] = ffarith.NewFFNum(p, g[i][j])
+		}
+	}
+	oldloc, err := bgw.ShareLocation(1, noCities, t, n, p)
+	if err != nil {
+		panic(err)
+	}
+	newloc, err := bgw.ShareLocation(2, noCities, t, n, p)
+	if err != nil {
+		panic(err)
+	}
+	endshares := make([][2]ffarith.FFNum, n)
+
+	for i := 0; i < n; i++ {
+		columnold := make([][2]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			columnold[j] = oldloc[j][i]
+		}
+		columnnew := make([][2]ffarith.FFNum, noCities)
+		for j := 0; j < noCities; j++ {
+			columnnew[j] = newloc[j][i]
+		}
+		fmt.Println()
+		tempcolumn := make([][2]ffarith.FFNum, n)
+		endshares[i], tempcolumn = bgw.ValidateMoveShares(graph, noCities, columnold, columnnew, i)
+		for j := 0; j < noCities; j++ {
+			tempshares[j][i] = tempcolumn[j]
+		}
+	}
+
+	for i := 0; i < noCities; i++ {
+		res, _ := bgw.ReconstructSecret(tempshares[i])
+		fmt.Printf("%d ", res.Int())
+	}
+	fmt.Println()
+	res, err := bgw.ReconstructSecret(endshares)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Verdict is:", res.Int())
+	if res.Int() != 1 {
+		return -1
+	}
+	return 0
+}
+
 // test for reconstruction
 func test1() int {
 	p := 29
@@ -58,6 +170,7 @@ func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
 
 	return result
 }
+
 func testDotProduct() int {
 	p := 29
 	t := 2
@@ -158,7 +271,7 @@ func main() {
 	// 	fmt.Printf("FAIL bad expected %d \n", val)
 	// 	return
 	// }
-	val := testDotProduct()
+	val := testMoveCheck()
 	if val != 0 {
 		fmt.Printf("FAIL bad expected %d \n", val)
 		return
