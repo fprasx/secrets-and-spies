@@ -50,7 +50,7 @@ func (a Num) Times(b Num) Num {
 	return New(a.p, a.val*b.val)
 }
 
-func (a Num) Over(b Num) Num {
+func (a Num) Div(b Num) Num {
 	utils.Assert(a.p == b.p, "mismatched moduli")
 	return a.Times(b.Inv())
 }
@@ -67,7 +67,7 @@ func (a Num) Inv() Num {
 	return New(a.p, t)
 }
 
-func (a Num) ToThe(power uint) Num {
+func (a Num) Pow(power uint) Num {
 	res := New(a.p, 1)
 	for i := uint(0); i < power; i++ {
 		res = res.Times(a)
