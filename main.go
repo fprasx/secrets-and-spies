@@ -3,17 +3,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/fprasx/secrets-and-spies/internal/bgw"
-	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
+	"github.com/fprasx/secrets-and-spies/bgw"
+	"github.com/fprasx/secrets-and-spies/ff"
 )
 
 // test for reconstruction
 func test1() int {
 	p := 29
-	points := [][2]ffarith.FFNum{
-		{ffarith.NewFFNum(p, 1), ffarith.NewFFNum(p, 10)},
-		{ffarith.NewFFNum(p, 2), ffarith.NewFFNum(p, 21)},
-		{ffarith.NewFFNum(p, 3), ffarith.NewFFNum(p, 9)},
+	points := [][2]ff.Num{
+		{ff.New(p, 1), ff.New(p, 10)},
+		{ff.New(p, 2), ff.New(p, 21)},
+		{ff.New(p, 3), ff.New(p, 9)},
 	}
 
 	secret, err := bgw.ReconstructSecret(points)
@@ -31,7 +31,7 @@ func test1() int {
 // test for sharing a secret
 func testShare() int {
 	p := 29
-	secret := ffarith.NewFFNum(p, 28)
+	secret := ff.New(p, 28)
 	shares, err := bgw.ShareSecret(secret, 10, 20)
 	if err != nil {
 		panic(err)
@@ -46,10 +46,10 @@ func testShare() int {
 	}
 	return 0
 }
-func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
+func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
 	p := x.P()
-	result := ffarith.NewFFNum(p, 0)
-	power := ffarith.NewFFNum(p, 1) // x^0
+	result := ff.New(p, 0)
+	power := ff.New(p, 1) // x^0
 
 	for _, coeff := range coeffs {
 		result = result.Plus(coeff.Times(power))
@@ -63,18 +63,18 @@ func testDotProduct() int {
 	t := 2
 	n := 5
 	noCities := 3
-	a := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 0),
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 0),
+	a := []ff.Num{
+		ff.New(p, 0),
+		ff.New(p, 1),
+		ff.New(p, 0),
 	}
 	shares, err := bgw.ShareLocation(2, noCities, t, n, p)
 	if err != nil {
 		panic(err)
 	}
-	newShares := make([][2]ffarith.FFNum, n)
+	newShares := make([][2]ff.Num, n)
 	for i := 0; i < n; i++ {
-		column := make([][2]ffarith.FFNum, noCities)
+		column := make([][2]ff.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			column[j] = shares[j][i]
 		}
@@ -97,24 +97,24 @@ func testDotProduct() int {
 // Reduced is 2x^2+3x+1
 func testDegreeReduce() int {
 	p := 29
-	poly := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 3),
-		ffarith.NewFFNum(p, 2),
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 1),
+	poly := []ff.Num{
+		ff.New(p, 1),
+		ff.New(p, 3),
+		ff.New(p, 2),
+		ff.New(p, 1),
+		ff.New(p, 1),
 	}
-	reducedpoly := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 3),
-		ffarith.NewFFNum(p, 2),
+	reducedpoly := []ff.Num{
+		ff.New(p, 1),
+		ff.New(p, 3),
+		ff.New(p, 2),
 	}
-	g := []ffarith.FFNum{
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 1)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 2)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 3)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 4)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 5)).Int()),
+	g := []ff.Num{
+		ff.New(p, evaluatePolynomial(poly, ff.New(p, 1)).Int()),
+		ff.New(p, evaluatePolynomial(poly, ff.New(p, 2)).Int()),
+		ff.New(p, evaluatePolynomial(poly, ff.New(p, 3)).Int()),
+		ff.New(p, evaluatePolynomial(poly, ff.New(p, 4)).Int()),
+		ff.New(p, evaluatePolynomial(poly, ff.New(p, 5)).Int()),
 	}
 	fmt.Println("old shares:")
 	for i, val := range g {
@@ -127,8 +127,8 @@ func testDegreeReduce() int {
 	fmt.Println("New reduced shares:")
 	for i, val := range newg {
 		fmt.Printf("Party %d: %d\n", i+1, val.Int())
-		if val.Int() != evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int() {
-			fmt.Printf("FAIL, %d expected %d, got %d\n", i+1, evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int(), val.Int())
+		if val.Int() != evaluatePolynomial(reducedpoly, ff.New(p, i+1)).Int() {
+			fmt.Printf("FAIL, %d expected %d, got %d\n", i+1, evaluatePolynomial(reducedpoly, ff.New(p, i+1)).Int(), val.Int())
 			return val.Int()
 		}
 	}

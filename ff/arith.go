@@ -1,10 +1,10 @@
-package ffarith
+package ff
 
 import (
-	"github.com/fprasx/secrets-and-spies/internal/utils"
+	"github.com/fprasx/secrets-and-spies/utils"
 )
 
-type FFNum struct {
+type Num struct {
 	p   int
 	val int
 }
@@ -30,32 +30,32 @@ func isPrime(n int) bool {
 }
 
 // p must be prime!
-func NewFFNum(p, val int) FFNum {
+func New(p, val int) Num {
 	utils.Assert(isPrime(p), "p must be prime")
-	return FFNum{p: p, val: mod(val, p)}
+	return Num{p: p, val: mod(val, p)}
 }
 
-func (a FFNum) Plus(b FFNum) FFNum {
+func (a Num) Plus(b Num) Num {
 	utils.Assert(a.p == b.p, "mismatched moduli")
-	return NewFFNum(a.p, a.val+b.val)
+	return New(a.p, a.val+b.val)
 }
 
-func (a FFNum) Minus(b FFNum) FFNum {
+func (a Num) Minus(b Num) Num {
 	utils.Assert(a.p == b.p, "mismatched moduli")
-	return NewFFNum(a.p, a.val-b.val)
+	return New(a.p, a.val-b.val)
 }
 
-func (a FFNum) Times(b FFNum) FFNum {
+func (a Num) Times(b Num) Num {
 	utils.Assert(a.p == b.p, "mismatched moduli")
-	return NewFFNum(a.p, a.val*b.val)
+	return New(a.p, a.val*b.val)
 }
 
-func (a FFNum) Over(b FFNum) FFNum {
+func (a Num) Over(b Num) Num {
 	utils.Assert(a.p == b.p, "mismatched moduli")
 	return a.Times(b.Inv())
 }
 
-func (a FFNum) Inv() FFNum {
+func (a Num) Inv() Num {
 	t, newT := 0, 1
 	r, newR := a.p, a.val
 	for newR != 0 {
@@ -64,20 +64,20 @@ func (a FFNum) Inv() FFNum {
 		r, newR = newR, r-quot*newR
 	}
 	utils.Assert(r == 1, "value not invertible")
-	return NewFFNum(a.p, t)
+	return New(a.p, t)
 }
 
-func (a FFNum) ToThe(power uint) FFNum {
-	res := NewFFNum(a.p, 1)
+func (a Num) ToThe(power uint) Num {
+	res := New(a.p, 1)
 	for i := uint(0); i < power; i++ {
 		res = res.Times(a)
 	}
 	return res
 }
 
-func (a FFNum) Int() int {
+func (a Num) Int() int {
 	return a.val
 }
-func (a FFNum) P() int {
+func (a Num) P() int {
 	return a.p
 }

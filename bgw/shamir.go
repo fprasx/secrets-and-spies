@@ -4,20 +4,20 @@ import (
 	"errors"
 	"fmt"
 
-	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
+	"github.com/fprasx/secrets-and-spies/ff"
 )
 
 type Shamir struct {
-	share  ffarith.FFNum
-	index  ffarith.FFNum
-	degree ffarith.FFNum
+	share  ff.Num
+	index  ff.Num
+	degree ff.Num
 }
 
 // evaluatePolynomial evaluates the polynomial at point x
-func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
+func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
 	p := x.P()
-	result := ffarith.NewFFNum(p, 0)
-	power := ffarith.NewFFNum(p, 1) // x^0
+	result := ff.New(p, 0)
+	power := ff.New(p, 1) // x^0
 
 	for _, coeff := range coeffs {
 		result = result.Plus(coeff.Times(power))
@@ -28,17 +28,17 @@ func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
 }
 
 // assumes t-1 degree poly
-func ReconstructSecret(points [][2]ffarith.FFNum) (ffarith.FFNum, error) {
+func ReconstructSecret(points [][2]ff.Num) (ff.Num, error) {
 	t := len(points)
 	if t == 0 {
-		return ffarith.FFNum{}, fmt.Errorf("no points provided")
+		return ff.Num{}, fmt.Errorf("no points provided")
 	}
 	p := points[0][0].P()
 
-	secret := ffarith.NewFFNum(p, 0)
+	secret := ff.New(p, 0)
 
 	for k := 0; k < t; k++ {
-		lambda := ffarith.NewFFNum(p, 1)
+		lambda := ff.New(p, 1)
 		xk := points[k][0]
 
 		for j := 0; j < t; j++ {
@@ -58,7 +58,7 @@ func ReconstructSecret(points [][2]ffarith.FFNum) (ffarith.FFNum, error) {
 }
 
 // SolveLinearSystemFF solves A * x = b over a finite field
-func SolveLinearSystemFF(A [][]ffarith.FFNum, b []ffarith.FFNum) ([]ffarith.FFNum, error) {
+func SolveLinearSystemFF(A [][]ff.Num, b []ff.Num) ([]ff.Num, error) {
 	n := len(A)
 
 	// Augment A with b
@@ -108,7 +108,7 @@ func SolveLinearSystemFF(A [][]ffarith.FFNum, b []ffarith.FFNum) ([]ffarith.FFNu
 	}
 
 	// Back substitution
-	x := make([]ffarith.FFNum, n)
+	x := make([]ff.Num, n)
 	for i := n - 1; i >= 0; i-- {
 		x[i] = A[i][n]
 		for j := i + 1; j < n; j++ {
