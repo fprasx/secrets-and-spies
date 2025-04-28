@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"crypto/rsa"
 	"net"
 	"net/rpc"
 
@@ -13,8 +12,6 @@ type PeerEnd struct {
 	name string         // name of the player
 	uid  uuid.UUID      // unique identifier for player
 	addr net.Addr       // network address of party (§3.2)
-	pk   rsa.PublicKey // encryption public key (§3.2)
-	vk   rsa.PublicKey // signature verification key (§3.2)
 }
 
 // Sends an RPC request to given party, synchronously waiting for reply.
