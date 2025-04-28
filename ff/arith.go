@@ -12,11 +12,7 @@ type Num struct {
 }
 
 func mod(a, p int) int {
-	a = a % p
-	if a < 0 {
-		a += p
-	}
-	return a
+	return (a % p + p) % p
 }
 
 // p must be prime!
