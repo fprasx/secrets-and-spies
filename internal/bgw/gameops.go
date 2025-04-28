@@ -2,7 +2,7 @@ package bgw
 
 import (
 	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
-	"github.com/fprasx/secrets-and-spies/internal/utils"
+	"github.com/fprasx/secrets-and-spies/utils"
 )
 
 // returns a matrix where each row represents shares of the ith element of location vector

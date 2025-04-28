@@ -1,17 +1,19 @@
 package bgw
 
-import ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
+import (
+	"github.com/fprasx/secrets-and-spies/ff"
+)
 
-func multiplyMatrices(A, B [][]ffarith.FFNum) [][]ffarith.FFNum {
+func multiplyMatrices(A, B [][]ff.Num) [][]ff.Num {
 	n := len(A)
 	m := len(B[0])
 	p := A[0][0].P()
 
-	result := make([][]ffarith.FFNum, n)
+	result := make([][]ff.Num, n)
 	for i := 0; i < n; i++ {
-		result[i] = make([]ffarith.FFNum, m)
+		result[i] = make([]ff.Num, m)
 		for j := 0; j < m; j++ {
-			sum := ffarith.NewFFNum(p, 0)
+			sum := ff.New(p, 0)
 			for k := 0; k < len(B); k++ {
 				sum = sum.Plus(A[i][k].Times(B[k][j]))
 			}
@@ -20,22 +22,22 @@ func multiplyMatrices(A, B [][]ffarith.FFNum) [][]ffarith.FFNum {
 	}
 	return result
 }
-func invertMatrix(A [][]ffarith.FFNum) ([][]ffarith.FFNum, error) {
+func invertMatrix(A [][]ff.Num) ([][]ff.Num, error) {
 	n := len(A)
 	p := A[0][0].P()
 
 	// Create augmented matrix (A | I)
-	M := make([][]ffarith.FFNum, n)
+	M := make([][]ff.Num, n)
 	for i := 0; i < n; i++ {
-		M[i] = make([]ffarith.FFNum, 2*n)
+		M[i] = make([]ff.Num, 2*n)
 		for j := 0; j < n; j++ {
 			M[i][j] = A[i][j]
 		}
 		for j := n; j < 2*n; j++ {
 			if j-n == i {
-				M[i][j] = ffarith.NewFFNum(p, 1)
+				M[i][j] = ff.New(p, 1)
 			} else {
-				M[i][j] = ffarith.NewFFNum(p, 0)
+				M[i][j] = ff.New(p, 0)
 			}
 		}
 	}
@@ -71,9 +73,9 @@ func invertMatrix(A [][]ffarith.FFNum) ([][]ffarith.FFNum, error) {
 	}
 
 	// Extract inverse matrix
-	invA := make([][]ffarith.FFNum, n)
+	invA := make([][]ff.Num, n)
 	for i := 0; i < n; i++ {
-		invA[i] = make([]ffarith.FFNum, n)
+		invA[i] = make([]ff.Num, n)
 		for j := 0; j < n; j++ {
 			invA[i][j] = M[i][j+n]
 		}

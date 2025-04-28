@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/fprasx/secrets-and-spies/internal/bgw"
-	ffarith "github.com/fprasx/secrets-and-spies/internal/ff_arith"
+	"github.com/fprasx/secrets-and-spies/bgw"
+	ffarith "github.com/fprasx/secrets-and-spies/ff"
 )
 
 // example for checking if moved onto city
@@ -13,26 +13,26 @@ func testMoveCheck() int {
 	t := 2
 	n := 5
 	noCities := 4
-	tempshares := make([][][2]ffarith.FFNum, noCities)
+	tempshares := make([][][2]ffarith.Num, noCities)
 	for i := 0; i < noCities; i++ {
-		tempshares[i] = make([][2]ffarith.FFNum, n)
+		tempshares[i] = make([][2]ffarith.Num, n)
 	}
 	oldloc, err := bgw.ShareLocation(3, noCities, t, n, p)
 	if err != nil {
 		panic(err)
 	}
-	newloc, err := bgw.ShareLocation(1, noCities, t, n, p)
+	newloc, err := bgw.ShareLocation(3, noCities, t, n, p)
 	if err != nil {
 		panic(err)
 	}
-	endshares := make([][2]ffarith.FFNum, n)
+	endshares := make([][2]ffarith.Num, n)
 
 	for i := 0; i < n; i++ {
-		columnold := make([][2]ffarith.FFNum, noCities)
+		columnold := make([][2]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			columnold[j] = oldloc[j][i]
 		}
-		columnnew := make([][2]ffarith.FFNum, noCities)
+		columnnew := make([][2]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			columnnew[j] = newloc[j][i]
 		}
@@ -67,13 +67,13 @@ func testMoveValidation() int {
 		{0, 1, 1, 0},
 		{1, 0, 0, 1},
 	}
-	graph := make([][]ffarith.FFNum, noCities)
-	tempshares := make([][][2]ffarith.FFNum, noCities)
+	graph := make([][]ffarith.Num, noCities)
+	tempshares := make([][][2]ffarith.Num, noCities)
 	for i := 0; i < noCities; i++ {
-		tempshares[i] = make([][2]ffarith.FFNum, n)
-		graph[i] = make([]ffarith.FFNum, noCities)
+		tempshares[i] = make([][2]ffarith.Num, n)
+		graph[i] = make([]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
-			graph[i][j] = ffarith.NewFFNum(p, g[i][j])
+			graph[i][j] = ffarith.New(p, g[i][j])
 		}
 	}
 	oldloc, err := bgw.ShareLocation(1, noCities, t, n, p)
@@ -84,19 +84,19 @@ func testMoveValidation() int {
 	if err != nil {
 		panic(err)
 	}
-	endshares := make([][2]ffarith.FFNum, n)
+	endshares := make([][2]ffarith.Num, n)
 
 	for i := 0; i < n; i++ {
-		columnold := make([][2]ffarith.FFNum, noCities)
+		columnold := make([][2]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			columnold[j] = oldloc[j][i]
 		}
-		columnnew := make([][2]ffarith.FFNum, noCities)
+		columnnew := make([][2]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			columnnew[j] = newloc[j][i]
 		}
 		fmt.Println()
-		tempcolumn := make([][2]ffarith.FFNum, n)
+		tempcolumn := make([][2]ffarith.Num, n)
 		endshares[i], tempcolumn = bgw.ValidateMoveShares(graph, noCities, columnold, columnnew, i)
 		for j := 0; j < noCities; j++ {
 			tempshares[j][i] = tempcolumn[j]
@@ -122,10 +122,10 @@ func testMoveValidation() int {
 // test for reconstruction
 func test1() int {
 	p := 29
-	points := [][2]ffarith.FFNum{
-		{ffarith.NewFFNum(p, 1), ffarith.NewFFNum(p, 10)},
-		{ffarith.NewFFNum(p, 2), ffarith.NewFFNum(p, 21)},
-		{ffarith.NewFFNum(p, 3), ffarith.NewFFNum(p, 9)},
+	points := [][2]ffarith.Num{
+		{ffarith.New(p, 1), ffarith.New(p, 10)},
+		{ffarith.New(p, 2), ffarith.New(p, 21)},
+		{ffarith.New(p, 3), ffarith.New(p, 9)},
 	}
 
 	secret, err := bgw.ReconstructSecret(points)
@@ -143,7 +143,7 @@ func test1() int {
 // test for sharing a secret
 func testShare() int {
 	p := 29
-	secret := ffarith.NewFFNum(p, 28)
+	secret := ffarith.New(p, 28)
 	shares, err := bgw.ShareSecret(secret, 10, 20)
 	if err != nil {
 		panic(err)
@@ -158,10 +158,10 @@ func testShare() int {
 	}
 	return 0
 }
-func evaluatePolynomial(coeffs []ffarith.FFNum, x ffarith.FFNum) ffarith.FFNum {
+func evaluatePolynomial(coeffs []ffarith.Num, x ffarith.Num) ffarith.Num {
 	p := x.P()
-	result := ffarith.NewFFNum(p, 0)
-	power := ffarith.NewFFNum(p, 1) // x^0
+	result := ffarith.New(p, 0)
+	power := ffarith.New(p, 1) // x^0
 
 	for _, coeff := range coeffs {
 		result = result.Plus(coeff.Times(power))
@@ -176,18 +176,18 @@ func testDotProduct() int {
 	t := 2
 	n := 5
 	noCities := 3
-	a := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 0),
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 0),
+	a := []ffarith.Num{
+		ffarith.New(p, 0),
+		ffarith.New(p, 1),
+		ffarith.New(p, 0),
 	}
 	shares, err := bgw.ShareLocation(2, noCities, t, n, p)
 	if err != nil {
 		panic(err)
 	}
-	newShares := make([][2]ffarith.FFNum, n)
+	newShares := make([][2]ffarith.Num, n)
 	for i := 0; i < n; i++ {
-		column := make([][2]ffarith.FFNum, noCities)
+		column := make([][2]ffarith.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			column[j] = shares[j][i]
 		}
@@ -210,24 +210,24 @@ func testDotProduct() int {
 // Reduced is 2x^2+3x+1
 func testDegreeReduce() int {
 	p := 29
-	poly := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 3),
-		ffarith.NewFFNum(p, 2),
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 1),
+	poly := []ffarith.Num{
+		ffarith.New(p, 1),
+		ffarith.New(p, 3),
+		ffarith.New(p, 2),
+		ffarith.New(p, 1),
+		ffarith.New(p, 1),
 	}
-	reducedpoly := []ffarith.FFNum{
-		ffarith.NewFFNum(p, 1),
-		ffarith.NewFFNum(p, 3),
-		ffarith.NewFFNum(p, 2),
+	reducedpoly := []ffarith.Num{
+		ffarith.New(p, 1),
+		ffarith.New(p, 3),
+		ffarith.New(p, 2),
 	}
-	g := []ffarith.FFNum{
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 1)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 2)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 3)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 4)).Int()),
-		ffarith.NewFFNum(p, evaluatePolynomial(poly, ffarith.NewFFNum(p, 5)).Int()),
+	g := []ffarith.Num{
+		ffarith.New(p, evaluatePolynomial(poly, ffarith.New(p, 1)).Int()),
+		ffarith.New(p, evaluatePolynomial(poly, ffarith.New(p, 2)).Int()),
+		ffarith.New(p, evaluatePolynomial(poly, ffarith.New(p, 3)).Int()),
+		ffarith.New(p, evaluatePolynomial(poly, ffarith.New(p, 4)).Int()),
+		ffarith.New(p, evaluatePolynomial(poly, ffarith.New(p, 5)).Int()),
 	}
 	fmt.Println("old shares:")
 	for i, val := range g {
@@ -240,8 +240,8 @@ func testDegreeReduce() int {
 	fmt.Println("New reduced shares:")
 	for i, val := range newg {
 		fmt.Printf("Party %d: %d\n", i+1, val.Int())
-		if val.Int() != evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int() {
-			fmt.Printf("FAIL, %d expected %d, got %d\n", i+1, evaluatePolynomial(reducedpoly, ffarith.NewFFNum(p, i+1)).Int(), val.Int())
+		if val.Int() != evaluatePolynomial(reducedpoly, ffarith.New(p, i+1)).Int() {
+			fmt.Printf("FAIL, %d expected %d, got %d\n", i+1, evaluatePolynomial(reducedpoly, ffarith.New(p, i+1)).Int(), val.Int())
 			return val.Int()
 		}
 	}
@@ -250,10 +250,10 @@ func testDegreeReduce() int {
 func main() {
 	fmt.Println("Running test...")
 	// p := 29
-	// points := [][2]ffarith.FFNum{
-	// 	{ffarith.NewFFNum(p, 1), ffarith.NewFFNum(p, 2)},
-	// 	{ffarith.NewFFNum(p, 2), ffarith.NewFFNum(p, 0)},
-	// 	{ffarith.NewFFNum(p, 3), ffarith.NewFFNum(p, 3)},
+	// points := [][2]ffarith.Num{
+	// 	{ffarith.New(p, 1), ffarith.New(p, 2)},
+	// 	{ffarith.New(p, 2), ffarith.New(p, 0)},
+	// 	{ffarith.New(p, 3), ffarith.New(p, 3)},
 	// }
 
 	// secret, err := bgw.ReconstructSecret(points)
@@ -271,7 +271,7 @@ func main() {
 	// 	fmt.Printf("FAIL bad expected %d \n", val)
 	// 	return
 	// }
-	val := testMoveCheck()
+	val := testMoveValidation()
 	if val != 0 {
 		fmt.Printf("FAIL bad expected %d \n", val)
 		return
