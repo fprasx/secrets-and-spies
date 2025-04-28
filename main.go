@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"github.com/charmbracelet/log"
 )
 
 func main() {
-	fmt.Println("Hello, world!")
+	log.SetReportCaller(true)
+	log.Info("Hello, world!")
 }
