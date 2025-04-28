@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"math/big"
 
-	ff "github.com/fprasx/secrets-and-spies/ff"
+	"github.com/fprasx/secrets-and-spies/ff"
 )
 
 // ShareSecret constructs shares according to Shamir's algorithm
-func ShareSecret(secret ff.Num, t int, n int) ([][2]ff.Num, error) {
+func ShareSecret(secret ff.Num, t int, n int) ([]Share, error) {
 	if t > n {
 		return nil, fmt.Errorf("threshold cannot be greater than number of parties")
 	}
@@ -29,11 +29,11 @@ func ShareSecret(secret ff.Num, t int, n int) ([][2]ff.Num, error) {
 	}
 
 	// Generate shares (i, f(i))
-	shares := make([][2]ff.Num, n)
+	shares := make([]Share, n)
 	for i := 1; i <= n; i++ {
 		x := ff.New(p, i)
 		y := evaluatePolynomial(coeffs, x)
-		shares[i-1] = [2]ff.Num{x, y}
+		shares[i-1] = Share{x, y}
 	}
 
 	return shares, nil

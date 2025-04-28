@@ -1,6 +1,8 @@
 package ff
 
 import (
+	"math/big"
+
 	"github.com/fprasx/secrets-and-spies/utils"
 )
 
@@ -17,21 +19,9 @@ func mod(a, p int) int {
 	return a
 }
 
-func isPrime(n int) bool {
-	if n < 2 {
-		return false
-	}
-	for i := 2; i < n; i++ {
-		if n%i == 0 {
-			return false
-		}
-	}
-	return true
-}
-
 // p must be prime!
 func New(p, val int) Num {
-	utils.Assert(isPrime(p), "p must be prime")
+	utils.Assert(big.NewInt(int64(p)).ProbablyPrime(0), "p must be prime")
 	return Num{p: p, val: mod(val, p)}
 }
 

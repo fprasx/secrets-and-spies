@@ -7,11 +7,7 @@ import (
 	"github.com/fprasx/secrets-and-spies/ff"
 )
 
-type Shamir struct {
-	share  ff.Num
-	index  ff.Num
-	degree ff.Num
-}
+type Share = [2]ff.Num
 
 // evaluatePolynomial evaluates the polynomial at point x
 func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
@@ -28,7 +24,7 @@ func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
 }
 
 // assumes t-1 degree poly
-func ReconstructSecret(points [][2]ff.Num) (ff.Num, error) {
+func ReconstructSecret(points []Share) (ff.Num, error) {
 	t := len(points)
 	if t == 0 {
 		return ff.Num{}, fmt.Errorf("no points provided")

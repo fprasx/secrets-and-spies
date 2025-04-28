@@ -1,6 +1,8 @@
 package bgw
 
-import "github.com/fprasx/secrets-and-spies/ff"
+import (
+	"github.com/fprasx/secrets-and-spies/ff"
+)
 
 func multiplyMatrices(A, B [][]ff.Num) [][]ff.Num {
 	n := len(A)
