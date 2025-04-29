@@ -47,7 +47,7 @@ func resolve(address string) (net.Addr, error) {
 }
 
 func main() {
-	log.SetReportCaller(true)
+	log.SetReportCaller(false)
 	log.SetReportTimestamp(false)
 
 	hostFlag := flag.Bool("host", false, "Run as host of game instead of player")
@@ -56,7 +56,7 @@ func main() {
 	flag.Parse()
 
 	if *addrFlag == "" {
-		log.Errorf("Error: -addr flag is required.\n")
+		log.Errorf("-addr flag is required.\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -65,11 +65,17 @@ func main() {
 	addr, err := resolve(*addrFlag)
 
 	if err != nil {
-		log.Errorf("Error: -addr flag is invalid: %v.\n", addr)
+		log.Errorf("-addr flag is invalid: %v.\n", addr)
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	peer := rpc.Make(addr, host)
-	_ = peer
+	peer := rpc.NewPeer(addr, host)
+
+	for {
+		select {
+		case reply := <-peer.Replies:
+			log.Info("Recieved rpc reply, ", reply)
+		}
+	}
 }
