@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	"log"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,6 +38,13 @@ func (i player) Title() string       { return i.name }
 func (i player) Description() string { return i.address }
 func (i player) FilterValue() string { return i.name }
 
+var (
+	startGame = key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "start game"),
+	)
+)
+
 type model struct {
 	loading bool
 	width   int
@@ -59,7 +67,18 @@ func newModel() model {
 	m.spinner.Spinner = spinner.Line
 	m.players.Title = "Lobby"
 	m.players.Styles.Title = titleStyle
-	m.players.SetStatusBarItemName("player", "players")
+	m.players.SetShowStatusBar(false)
+	m.players.SetShowFilter(false)
+
+	if menu.Host {
+		m.players.AdditionalShortHelpKeys = func() []key.Binding {
+			return []key.Binding{startGame}
+		}
+
+		m.players.AdditionalFullHelpKeys = func() []key.Binding {
+			return []key.Binding{startGame}
+		}
+	}
 
 	Service = m.service
 
