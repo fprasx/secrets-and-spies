@@ -12,7 +12,7 @@ type Num struct {
 }
 
 func mod(a, p int) int {
-	return (a % p + p) % p
+	return (a%p + p) % p
 }
 
 // p must be prime!
@@ -53,11 +53,18 @@ func (a Num) Inv() Num {
 	return New(a.p, t)
 }
 
-func (a Num) Pow(power uint) Num {
+func (a Num) Pow(exp uint) Num {
 	res := New(a.p, 1)
-	for i := uint(0); i < power; i++ {
-		res = res.Times(a)
+	base := a
+
+	for exp > 0 {
+		if exp&2 == 1 {
+			res = res.Times(base)
+		}
+		base = base.Times(base)
+		exp >>= 1
 	}
+
 	return res
 }
 
