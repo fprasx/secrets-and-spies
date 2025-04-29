@@ -18,7 +18,7 @@ func (s *Spies) Lobby(args *LobbyArgs, reply *LobbyReply) error {
 	s.Lock()
 	defer s.Unlock()
 
-	utils.Assert(!s.IsHost(), "Host should not be receiving Lobby RPC")
+	utils.Assert(s.me != 0, "Host should not be receiving Lobby RPC")
 
 	s.peers = slices.Clone(args.Peers)
 

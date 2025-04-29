@@ -1,7 +1,6 @@
 package lobby
 
 import (
-	// "fmt"
 	"log"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -90,7 +89,9 @@ type startMsg struct{}
 
 func connectToHost(srv *service.Spies) func() tea.Msg {
 	return func() tea.Msg {
-		srv.Join(menu.HostAddress)
+		if !srv.IsHost() {
+			srv.Join(menu.HostAddress)
+		}
 		return joinMsg{}
 	}
 }
@@ -117,7 +118,7 @@ func (m *model) updatePeers() tea.Cmd {
 
 func startGame(srv *service.Spies) tea.Cmd {
 	return func() tea.Msg {
-		srv.Start()
+		srv.HostStart()
 		return startMsg{}
 	}
 }
@@ -154,6 +155,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
 	}
+
+	if m.service.Started() {
+		return m, func() tea.Msg { return startMsg{} }
+	}
+
 
 	var cmd tea.Cmd
 	m.players, cmd = m.players.Update(msg)
