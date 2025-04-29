@@ -124,9 +124,8 @@ func startGame(srv *service.Spies) tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if cmd := m.updatePeers(); cmd != nil {
-		return m, cmd
-	}
+	cmds := []tea.Cmd{}
+	cmds = append(cmds, m.updatePeers())
 
 	switch msg := msg.(type) {
 	case startMsg:
@@ -153,18 +152,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		cmds = append(cmds, cmd)
 	}
 
 	if m.service.Started() {
 		return m, func() tea.Msg { return startMsg{} }
 	}
 
-
 	var cmd tea.Cmd
 	m.players, cmd = m.players.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) viewLobby() string {
