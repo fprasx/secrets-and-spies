@@ -79,3 +79,7 @@ func RegisterLogger() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(io.Discard)
 }
+
+func AddrString(addr net.Addr) string {
+	return fmt.Sprintf("%s://%s", addr.Network(), addr.String())
+}

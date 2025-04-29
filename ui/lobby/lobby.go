@@ -1,14 +1,17 @@
 package lobby
 
 import (
+	// "fmt"
 	"log"
-	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fprasx/secrets-and-spies/service"
 	"github.com/fprasx/secrets-and-spies/ui/menu"
+	"github.com/fprasx/secrets-and-spies/utils"
 )
 
 var (
@@ -19,6 +22,27 @@ var (
 	appStyle     = lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center)
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
 	textStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+
+	titleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#11111b")).
+			Background(lipgloss.Color("#f5c2e7")).
+			Padding(0, 1)
+)
+
+type player struct {
+	name    string
+	address string
+}
+
+func (i player) Title() string       { return i.name }
+func (i player) Description() string { return i.address }
+func (i player) FilterValue() string { return i.name }
+
+var (
+	startGame = key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "start game"),
+	)
 )
 
 type model struct {
@@ -27,6 +51,7 @@ type model struct {
 	height  int
 	service *service.Spies
 	spinner spinner.Model
+	players list.Model
 }
 
 func newModel() model {
@@ -36,9 +61,26 @@ func newModel() model {
 			WithName(menu.Name).
 			WithHost(menu.Host),
 		spinner: spinner.New(),
+		players: list.New([]list.Item{player{name: "Joe", address: "USA"}}, list.NewDefaultDelegate(), 0, 0),
 	}
 
 	m.spinner.Spinner = spinner.Line
+	m.players.Title = "Lobby"
+	m.players.Styles.Title = titleStyle
+	m.players.SetShowStatusBar(false)
+	m.players.SetShowFilter(false)
+
+	if menu.Host {
+		m.players.AdditionalShortHelpKeys = func() []key.Binding {
+			return []key.Binding{startGame}
+		}
+
+		m.players.AdditionalFullHelpKeys = func() []key.Binding {
+			return []key.Binding{startGame}
+		}
+	}
+
+	Service = m.service
 
 	return m
 }
@@ -56,17 +98,36 @@ func (m model) Init() tea.Cmd {
 	return tea.Batch(connectToHost(m.service), m.spinner.Tick)
 }
 
+func (m *model) updatePeers() tea.Cmd {
+	peers := m.service.Peers()
+
+	players := []list.Item{}
+
+	for _, peer := range peers {
+		players = append(players, player{
+			name:    peer.Name,
+			address: utils.AddrString(peer.Addr),
+		})
+	}
+
+	cmd := m.players.SetItems(players)
+	return cmd
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if cmd := m.updatePeers(); cmd != nil {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.players.SetSize(40, m.height/2)
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
+		case "ctrl+c", "esc", "q":
 			return m, tea.Interrupt
-		case "esc", "q":
-			return m, tea.Quit
 		}
 	case joinMsg:
 		m.loading = false
@@ -76,25 +137,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	return m, nil
+	var cmd tea.Cmd
+	m.players, cmd = m.players.Update(msg)
+
+	return m, cmd
+}
+
+func (m model) viewLobby() string {
+	return lipgloss.NewStyle().
+		PaddingTop(4).
+		PaddingBottom(4).
+		Render(m.players.View())
+}
+
+func (m model) viewLoading() string {
+	return lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		spinnerStyle.Render(m.spinner.View()),
+		textStyle.MarginLeft(4).Render("Loading..."),
+	)
 }
 
 func (m model) View() string {
-	var content strings.Builder
-
 	if m.loading {
-		content.WriteString(
-			lipgloss.JoinHorizontal(
-                lipgloss.Center,
-				spinnerStyle.Render(m.spinner.View()),
-				textStyle.MarginLeft(4).Render("Loading..."),
-			),
-		)
+		return appStyle.
+			Width(m.width).
+			Height(m.height).
+			Render(m.viewLoading())
+	} else {
+		return appStyle.
+			Width(m.width).
+			Height(m.height).
+			Render(m.viewLobby())
 	}
 
-	return appStyle.Width(m.width).
-		Height(m.height).
-		Render(content.String())
 }
 
 func Show() {
