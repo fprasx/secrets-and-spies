@@ -7,70 +7,99 @@ import (
 )
 
 type Num struct {
-	p   int
-	val int
+	inner *big.Int
 }
 
-func mod(a, p int) int {
-	return (a%p + p) % p
+var p *big.Int = nil
+
+func FieldPrime() *big.Int {
+	if p == nil {
+		// https://datatracker.ietf.org/doc/html/rfc3526#section-2
+		s := "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+			"29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
+			"EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
+			"E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
+			"EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
+			"C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
+			"83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
+			"670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF"
+		p = new(big.Int)
+		p.SetString(s, 16)
+	}
+	return p
 }
 
-// p must be prime!
-func New(p, val int) Num {
-	utils.Assert(big.NewInt(int64(p)).ProbablyPrime(0), "p must be prime")
-	return Num{p: p, val: mod(val, p)}
+// modify returns num mod p. Does not actually modify num.
+func modify(num *big.Int) *big.Int {
+	mod := new(big.Int)
+	quot := new(big.Int)
+	quot.DivMod(num, FieldPrime(), mod)
+	return mod
+}
+
+func New(val int64) Num {
+	return Num{inner: big.NewInt(int64(val))}
 }
 
 func (a Num) Plus(b Num) Num {
-	utils.Assert(a.p == b.p, "mismatched moduli")
-	return New(a.p, a.val+b.val)
+	aa := a.inner
+	bb := b.inner
+	sum := new(big.Int)
+	sum.Add(aa, bb)
+	return Num{inner: modify(sum)}
 }
 
 func (a Num) Minus(b Num) Num {
-	utils.Assert(a.p == b.p, "mismatched moduli")
-	return New(a.p, a.val-b.val)
+	aa := a.inner
+	bb := b.inner
+	diff := new(big.Int)
+	diff.Sub(aa, bb)
+	return Num{inner: modify(diff)}
 }
 
 func (a Num) Times(b Num) Num {
-	utils.Assert(a.p == b.p, "mismatched moduli")
-	return New(a.p, a.val*b.val)
+	aa := a.inner
+	bb := b.inner
+	prod := new(big.Int)
+	prod.Mul(aa, bb)
+	return Num{inner: modify(prod)}
 }
 
 func (a Num) Div(b Num) Num {
-	utils.Assert(a.p == b.p, "mismatched moduli")
-	return a.Times(b.Inv())
+    return a.Times(b.Inv())
 }
 
 func (a Num) Inv() Num {
-	t, newT := 0, 1
-	r, newR := a.p, a.val
-	for newR != 0 {
-		quot := r / newR
-		t, newT = newT, t-quot*newT
-		r, newR = newR, r-quot*newR
-	}
-	utils.Assert(r == 1, "value not invertible")
-	return New(a.p, t)
+	aa := a.inner
+	inv := new(big.Int)
+	inv.ModInverse(aa, FieldPrime())
+	return Num{inner: inv}
 }
 
-func (a Num) Pow(exp uint) Num {
-	res := New(a.p, 1)
-	base := a
-
-	for exp > 0 {
-		if exp&2 == 1 {
-			res = res.Times(base)
-		}
-		base = base.Times(base)
-		exp >>= 1
-	}
-
-	return res
+func (a Num) Pow(exponent *big.Int) Num {
+	aa := a.inner
+	res := new(big.Int)
+	res.Exp(aa, exponent, FieldPrime())
+	return Num{inner: res}
 }
 
-func (a Num) Int() int {
-	return a.val
+func (a Num) IsZero() bool {
+	return a.inner.Sign() == 0
 }
-func (a Num) P() int {
-	return a.p
+
+func (a Num) IsNonZero() bool {
+	utils.Assert(a.inner.Sign() != -1, "field element shouldn't be negative")
+	return a.inner.Sign() == 1
+}
+
+func (a Num) Eq(b Num) bool {
+	return a.inner.Cmp(b.inner) == 0
+}
+
+func (a Num) Neq(b Num) bool {
+	return a.inner.Cmp(b.inner) != 0
+}
+
+func (a Num) BigInt() *big.Int {
+	return a.inner
 }

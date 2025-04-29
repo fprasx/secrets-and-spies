@@ -9,7 +9,6 @@ import (
 
 func TestMoveCheck(t *testing.T) {
 	fmt.Println("Running test MoveCheck")
-	p := 29
 	tVal := 2
 	n := 5
 	noCities := 4
@@ -17,11 +16,11 @@ func TestMoveCheck(t *testing.T) {
 	for i := 0; i < noCities; i++ {
 		tempshares[i] = make([][2]ff.Num, n)
 	}
-	oldloc, err := ShareLocation(3, noCities, tVal, n, p)
+	oldloc, err := ShareLocation(3, noCities, tVal, n)
 	if err != nil {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
-	newloc, err := ShareLocation(3, noCities, tVal, n, p)
+	newloc, err := ShareLocation(3, noCities, tVal, n)
 	if err != nil {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
@@ -44,14 +43,13 @@ func TestMoveCheck(t *testing.T) {
 		t.Fatalf("ReconstructSecret failed: %v", err)
 	}
 
-	if res.Int() != 1 {
-		t.Fatalf("expected result 1, got %d", res.Int())
+	if res.Neq(ff.New(1)) {
+		t.Fatalf("expected result 1, got %d", res.BigInt())
 	}
 }
 
 func TestMoveValidation(t *testing.T) {
 	fmt.Println("Running test MoveValidation")
-	p := 29
 	tVal := 2
 	n := 5
 	noCities := 4
@@ -67,14 +65,14 @@ func TestMoveValidation(t *testing.T) {
 		tempshares[i] = make([][2]ff.Num, n)
 		graph[i] = make([]ff.Num, noCities)
 		for j := 0; j < noCities; j++ {
-			graph[i][j] = ff.New(p, g[i][j])
+			graph[i][j] = ff.New(int64(g[i][j]))
 		}
 	}
-	oldloc, err := ShareLocation(1, noCities, tVal, n, p)
+	oldloc, err := ShareLocation(1, noCities, tVal, n)
 	if err != nil {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
-	newloc, err := ShareLocation(2, noCities, tVal, n, p)
+	newloc, err := ShareLocation(2, noCities, tVal, n)
 	if err != nil {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
@@ -101,16 +99,15 @@ func TestMoveValidation(t *testing.T) {
 		t.Fatalf("ReconstructSecret failed: %v", err)
 	}
 
-	if res.Int() != 1 {
-		t.Fatalf("expected result 1, got %d", res.Int())
+	if res.Neq(ff.New(1)) {
+		t.Fatalf("expected result 1, got %d", res.BigInt())
 	}
 }
 func TestReconstructSecret(t *testing.T) {
-	p := 29
 	points := []Share{
-		{ff.New(p, 1), ff.New(p, 10)},
-		{ff.New(p, 2), ff.New(p, 21)},
-		{ff.New(p, 3), ff.New(p, 9)},
+		{ff.New(1), ff.New(8)},
+		{ff.New(2), ff.New(13)},
+		{ff.New(3), ff.New(20)},
 	}
 
 	secret, err := ReconstructSecret(points)
@@ -118,14 +115,13 @@ func TestReconstructSecret(t *testing.T) {
 		t.Fatalf("ReconstructSecret failed: %v", err)
 	}
 
-	if secret.Int() != 5 {
-		t.Fatalf("expected secret 5, got %d", secret.Int())
+	if secret.Neq(ff.New(5)) {
+		t.Fatalf("expected secret 5, got %d", secret.BigInt())
 	}
 }
 
 func TestShareSecret(t *testing.T) {
-	p := 29
-	secret := ff.New(p, 28)
+	secret := ff.New(28)
 
 	shares, err := ShareSecret(secret, 10, 20)
 	if err != nil {
@@ -137,23 +133,22 @@ func TestShareSecret(t *testing.T) {
 		t.Fatalf("ReconstructSecret failed: %v", err)
 	}
 
-	if recon.Int() != secret.Int() {
-		t.Fatalf("expected secret %d, got %d", secret.Int(), recon.Int())
+	if recon.Neq(secret) {
+		t.Fatalf("expected secret %d, got %d", secret.BigInt(), recon.BigInt())
 	}
 }
 
 func TestDotProduct(t *testing.T) {
-	p := 29
 	tVal := 2
 	n := 5
 	noCities := 3
 	a := []ff.Num{
-		ff.New(p, 0),
-		ff.New(p, 1),
-		ff.New(p, 0),
+		ff.New(0),
+		ff.New(1),
+		ff.New(0),
 	}
 
-	shares, err := ShareLocation(2, noCities, tVal, n, p)
+	shares, err := ShareLocation(2, noCities, tVal, n)
 	if err != nil {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
@@ -172,33 +167,32 @@ func TestDotProduct(t *testing.T) {
 		t.Fatalf("ReconstructSecret failed: %v", err)
 	}
 
-	if secret.Int() != 0 {
-		t.Fatalf("expected dot product 0, got %d", secret.Int())
+	if secret.IsNonZero() {
+		t.Fatalf("expected dot product 0, got %d", secret.BigInt())
 	}
 }
 
 func TestDegreeReduce(t *testing.T) {
-	p := 29
 	poly := []ff.Num{
-		ff.New(p, 1),
-		ff.New(p, 3),
-		ff.New(p, 2),
-		ff.New(p, 1),
-		ff.New(p, 1),
+		ff.New(1),
+		ff.New(3),
+		ff.New(2),
+		ff.New(1),
+		ff.New(1),
 	}
 	reducedPoly := []ff.Num{
-		ff.New(p, 1),
-		ff.New(p, 3),
-		ff.New(p, 2),
+		ff.New(1),
+		ff.New(3),
+		ff.New(2),
 	}
 
 	// Create original shares
 	g := []ff.Num{
-		ff.New(p, evaluatePolynomial(poly, ff.New(p, 1)).Int()),
-		ff.New(p, evaluatePolynomial(poly, ff.New(p, 2)).Int()),
-		ff.New(p, evaluatePolynomial(poly, ff.New(p, 3)).Int()),
-		ff.New(p, evaluatePolynomial(poly, ff.New(p, 4)).Int()),
-		ff.New(p, evaluatePolynomial(poly, ff.New(p, 5)).Int()),
+		evaluatePolynomial(poly, ff.New(1)),
+		evaluatePolynomial(poly, ff.New(2)),
+		evaluatePolynomial(poly, ff.New(3)),
+		evaluatePolynomial(poly, ff.New(4)),
+		evaluatePolynomial(poly, ff.New(5)),
 	}
 
 	newg, err := DegreeReduce(g, 2) // Reduce to degree 2
@@ -208,9 +202,9 @@ func TestDegreeReduce(t *testing.T) {
 
 	// Verify new shares match evaluation of reduced polynomial
 	for i, val := range newg {
-		expected := evaluatePolynomial(reducedPoly, ff.New(p, i+1)).Int()
-		if val.Int() != expected {
-			t.Fatalf("party %d: expected %d, got %d", i+1, expected, val.Int())
+		expected := evaluatePolynomial(reducedPoly, ff.New(int64(i+1)))
+		if val.Neq(expected) {
+			t.Fatalf("party %d: expected %d, got %d", i+1, expected.BigInt(), val.BigInt())
 		}
 	}
 }
