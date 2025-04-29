@@ -1,20 +1,23 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/rpc"
 	"os"
 	"sync"
 
-	"github.com/fprasx/secrets-and-spies/utils"
 	"slices"
+
+	"github.com/fprasx/secrets-and-spies/utils"
 )
 
 type state int
 
 const (
-	stateLobby state = iota
+	stateInit state = iota
+	stateSeed
 )
 
 type Spies struct {
@@ -28,6 +31,10 @@ type Spies struct {
 
 func (s *Spies) Peers() []Peer {
 	return slices.Clone(s.peers)
+}
+
+func (s *Spies) Players() int {
+	return len(s.peers)
 }
 
 func (s *Spies) IsHost() bool {
@@ -79,7 +86,7 @@ func New(hostname string) *Spies {
 	}
 
 	s.peer = Peer{Addr: addr}
-	s.state = stateLobby
+	s.state = stateInit
 	s.peers = []Peer{}
 	s.me = -1
 	s.next = -1
@@ -159,4 +166,16 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 	}
 
 	wg.Wait()
+}
+
+func (s *Spies) HostStart() {
+	s.Lock()
+	defer s.Unlock()
+
+	peers := slices.Clone(s.peers)
+
+	utils.Assert(s.state == stateInit, fmt.Sprintf("Expected state to be 0, instead %v", s.state))
+	utils.Assert(s.IsHost(), "Expected to be host")
+
+	go s.Broadcast(func(e *Peer) { e.Start(peers) })
 }

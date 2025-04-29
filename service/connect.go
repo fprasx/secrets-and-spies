@@ -20,7 +20,7 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 		return fmt.Errorf("Cannot connect to non-host")
 	}
 
-	if s.state != stateLobby {
+	if s.state != stateInit {
 		return fmt.Errorf("Cannot join non-lobby game")
 	}
 

@@ -39,7 +39,7 @@ func (i player) Description() string { return i.address }
 func (i player) FilterValue() string { return i.name }
 
 var (
-	startGame = key.NewBinding(
+	startKey = key.NewBinding(
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "start game"),
 	)
@@ -72,11 +72,11 @@ func newModel() model {
 
 	if menu.Host {
 		m.players.AdditionalShortHelpKeys = func() []key.Binding {
-			return []key.Binding{startGame}
+			return []key.Binding{startKey}
 		}
 
 		m.players.AdditionalFullHelpKeys = func() []key.Binding {
-			return []key.Binding{startGame}
+			return []key.Binding{startKey}
 		}
 	}
 
@@ -86,6 +86,7 @@ func newModel() model {
 }
 
 type joinMsg struct{}
+type startMsg struct{}
 
 func connectToHost(srv *service.Spies) func() tea.Msg {
 	return func() tea.Msg {
@@ -114,12 +115,22 @@ func (m *model) updatePeers() tea.Cmd {
 	return cmd
 }
 
+func startGame(srv *service.Spies) tea.Cmd {
+	return func() tea.Msg {
+		srv.Start()
+		return startMsg{}
+	}
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd := m.updatePeers(); cmd != nil {
 		return m, cmd
 	}
 
 	switch msg := msg.(type) {
+	case startMsg:
+		return m, tea.Quit
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -128,6 +139,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "esc", "q":
 			return m, tea.Interrupt
+		}
+
+		switch {
+		case key.Matches(msg, startKey):
+			if menu.Host && m.service.Players() > 1 {
+				return m, startGame(m.service)
+			}
 		}
 	case joinMsg:
 		m.loading = false
