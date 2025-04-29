@@ -5,7 +5,7 @@ import (
 )
 
 type ConnectArgs struct {
-	End  ClientEnd
+	End ClientEnd
 }
 
 type ConnectReply struct {
@@ -14,7 +14,7 @@ type ConnectReply struct {
 
 func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 	s.Lock()
-	defer s.Lock()
+	defer s.Unlock()
 
 	if !s.isHost() {
 		return fmt.Errorf("Cannot connect to non-host")
@@ -33,12 +33,12 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 	return nil
 }
 
-func (e *ClientEnd) Connect(end ClientEnd) int {
+func (e *ClientEnd) Connect(end ClientEnd) (int, error) {
 	var args ConnectArgs
 	var reply ConnectReply
 
 	args.End = end
-	_ = e.Call("Spies.Connect", &args, &reply)
+	err := e.Call("Spies.Connect", &args, &reply)
 
-	return reply.You
+	return reply.You, err
 }

@@ -1,10 +1,14 @@
 package utils
 
 import (
+	"encoding/gob"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/url"
+	"os"
 )
 
 func Assert(cond bool, msg string) {
@@ -53,4 +57,25 @@ func ValidateAddr(address string) error {
 	}
 
 	return nil
+}
+
+func IsSocket(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	return fileInfo.Mode().Type() == fs.ModeSocket
+}
+
+func RegisterRpcTypes() {
+	gob.Register(&net.UnixAddr{})
+	gob.Register(&net.TCPAddr{})
+	gob.Register(&net.UDPAddr{})
+	gob.Register(&net.IPAddr{})
+}
+
+func RegisterLogger() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetOutput(io.Discard)
 }

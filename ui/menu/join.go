@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -23,14 +24,15 @@ func newJoinModel() joinModel {
 				huh.NewInput().
 					Value(&HostAddress).
 					Title("Host Address").
+					Prompt("").
 					Description("Address of host to connect to").
 					Placeholder("unix:///tmp/spies/socket"),
 			),
 		).
 			WithWidth(minWidth).
 			WithTheme(huh.ThemeCatppuccin()).
-			WithShowErrors(false).
-			WithShowHelp(true),
+			WithShowHelp(false).
+			WithShowErrors(true),
 	}
 
 	return m
@@ -76,7 +78,11 @@ func (m joinModel) View() string {
 	}
 
 	return appStyle.Render(
-		formStyle.Render(m.form.View()),
+		lipgloss.JoinVertical(
+			lipgloss.Center,
+			headerStyle.Render(banner),
+			formStyle.Render(m.form.View()),
+		),
 	)
 }
 

@@ -11,7 +11,7 @@ type ClientEnd struct {
 	Addr net.Addr
 }
 
-func (e ClientEnd) Call(rpcname string, args any, reply any) bool {
+func (e ClientEnd) Call(rpcname string, args any, reply any) error {
 	c, err := rpc.Dial(e.Addr.Network(), e.Addr.String())
 
 	if err != nil {
@@ -20,7 +20,5 @@ func (e ClientEnd) Call(rpcname string, args any, reply any) bool {
 
 	defer c.Close()
 
-	err = c.Call(rpcname, args, reply)
-
-	return err == nil
+	return c.Call(rpcname, args, reply)
 }

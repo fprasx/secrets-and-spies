@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/rpc"
+	"os"
 	"sync"
 
 	"github.com/fprasx/secrets-and-spies/utils"
@@ -41,6 +42,10 @@ func (s *Spies) serve() {
 
 	rpc.Register(s)
 
+	if utils.IsSocket(s.end.Addr.String()) {
+		os.Remove(s.end.Addr.String())
+	}
+
 	l, err := net.Listen(s.end.Addr.Network(), s.end.Addr.String())
 
 	if err != nil {
@@ -59,7 +64,7 @@ func (s *Spies) serve() {
 	}()
 }
 
-func New(name, hostname string) *Spies {
+func New(hostname string) *Spies {
 	s := new(Spies)
 
 	addr, err := utils.ResolveAddr(hostname)
@@ -68,12 +73,22 @@ func New(name, hostname string) *Spies {
 		log.Fatal(err)
 	}
 
-	s.end = ClientEnd{Name: name, Addr: addr}
+	s.end = ClientEnd{Addr: addr}
+	s.state = stateLobby
 	s.peers = []ClientEnd{}
 	s.me = -1
 	s.next = -1
 
 	s.serve()
+
+	return s
+}
+
+func (s *Spies) WithName(name string) *Spies {
+	s.Lock()
+	defer s.Unlock()
+
+	s.end.Name = name
 
 	return s
 }
@@ -106,7 +121,13 @@ func (s *Spies) Join(hostname string) *Spies {
 	}
 
 	end := ClientEnd{Addr: addr}
-	end.Connect(end)
+	me, err := end.Connect(end)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s.me = me
 
 	return s
 }

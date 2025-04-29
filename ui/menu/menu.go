@@ -11,7 +11,7 @@ import (
 	"github.com/fprasx/secrets-and-spies/utils"
 )
 
-const minWidth = 47
+const minWidth = 50
 
 //go:embed banner.txt
 var banner string
@@ -40,6 +40,7 @@ func newModel() model {
 					Title("Name").
 					Value(&Name).
 					Description("Your display name").
+					Prompt("").
 					Validate(func(s string) error {
 						if len(s) <= 0 {
 							return fmt.Errorf("Name cannot be empty")
@@ -51,21 +52,21 @@ func newModel() model {
 				huh.NewInput().
 					Value(&Address).
 					Title("Address").
+					Prompt("").
 					Description("Your network address").
 					Validate(utils.ValidateAddr).
 					Placeholder("unix:///tmp/spies/socket"),
 
 				huh.NewConfirm().
 					Value(&Host).
-					Title("Start the game?").
 					Affirmative("Host").
 					Negative("Join"),
 			),
 		).
 			WithWidth(minWidth).
 			WithTheme(huh.ThemeCatppuccin()).
-			WithShowErrors(true).
-			WithShowHelp(true),
+			WithShowHelp(false).
+			WithShowErrors(true),
 	}
 
 	return m
