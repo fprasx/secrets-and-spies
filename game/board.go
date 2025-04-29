@@ -29,6 +29,21 @@ type PlayerState struct {
 	nextEnergy   int
 }
 
+func RPCSendVec(vec [][2]ff.Num, party int) error {
+	return nil
+
+}
+func RPCBroadcastVec([][2]ff.Num) error {
+	return nil
+
+}
+func RPCReceiveVec() error {
+	return nil
+}
+func MyTurn(b *Board) int {
+	return b.Turn
+}
+
 func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, p int, seed ff.Num) *Board {
 	territories := make([]int, noCities)
 	for i := range territories {
