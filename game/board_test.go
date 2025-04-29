@@ -1,0 +1,143 @@
+// board_test.go
+
+package game
+
+import (
+	"testing"
+
+	ff "github.com/fprasx/secrets-and-spies/ff"
+)
+
+func TestBoard_ExecuteAction_Move(t *testing.T) {
+	// Create a new board with 2 cities and 1 player
+	board := &Board{
+		Graph: [][]ff.Num{
+			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(29, 1), ff.New(29, 1)},
+		},
+		Players: []PlayerState{
+			{City: 0, Energy: 2, Intel: 0, Revealed: false, Dead: false, nextEnergy: 2},
+		},
+		Territories:     []int{-1, -1},
+		Turn:            0,
+		TurnNumber:      0,
+		seed:            ff.New(29, 1),
+		noCities:        2,
+		cityToBeRemoved: -1,
+	}
+
+	// Create a move action
+	action := Action{
+		Type:       Move,
+		TargetCity: 1,
+	}
+
+	// Execute the action
+	err := board.executeAction(action)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Check if the player moved to the new city
+	if board.Players[0].City != 1 {
+		t.Errorf("expected player to move to city 1, but got city %d", board.Players[0].City)
+	}
+}
+
+func TestBoard_ExecuteAction_Strike(t *testing.T) {
+	// Create a new board with 2 cities and 2 players
+	board := &Board{
+		Graph: [][]ff.Num{
+			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(29, 1), ff.New(29, 1)},
+		},
+		Players: []PlayerState{
+			{City: 0, Energy: 2, Intel: 0, Revealed: false, Dead: false, nextEnergy: 2},
+			{City: 0, Energy: 2, Intel: 0, Revealed: false, Dead: false, nextEnergy: 2},
+		},
+		Territories:     []int{-1, -1},
+		Turn:            0,
+		TurnNumber:      0,
+		seed:            ff.New(29, 1),
+		noCities:        2,
+		cityToBeRemoved: -1,
+	}
+
+	// Create a strike action
+	action := Action{
+		Type:       Strike,
+		TargetCity: 0,
+	}
+
+	// Execute the action
+	err := board.executeAction(action)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Check if the other player is dead
+	if !board.Players[1].Dead {
+		t.Errorf("expected player 1 to be dead, but got %v", board.Players[1].Dead)
+	}
+}
+func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
+	// Create a new board with 2 cities and 1 player
+	board := &Board{
+		Graph: [][]ff.Num{
+			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(29, 1), ff.New(29, 1)},
+		},
+		Players: []PlayerState{
+			{City: 0, Energy: 2, Intel: 20, Revealed: false, Dead: false, nextEnergy: 2},
+		},
+		Territories:     []int{-1, -1},
+		Turn:            0,
+		TurnNumber:      0,
+		seed:            ff.New(29, 1),
+		noCities:        2,
+		cityToBeRemoved: -1,
+	}
+
+	// Create a secret mission action
+	action := Action{
+		Type: SecretMission,
+	}
+
+	// Execute the action
+	err := board.executeAction(action)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Check if the player's intel was spent correctly
+	if board.Players[0].Intel != 0 {
+		t.Errorf("expected player's intel to be 0, but got %d", board.Players[0].Intel)
+	}
+
+	// Check if the player's next energy was increased
+	if board.Players[0].nextEnergy != 3 {
+		t.Errorf("expected player's next energy to be 3, but got %d", board.Players[0].nextEnergy)
+	}
+
+	// Create a move action
+	action = Action{
+		Type:       Move,
+		TargetCity: 1,
+	}
+
+	// Execute the action
+	err = board.executeAction(action)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Check if the player moved to the new city
+	if board.Players[0].City != 1 {
+		t.Errorf("expected player to move to city 1, but got city %d", board.Players[0].City)
+	}
+
+	// Check if the player's energy was increased
+	if board.Players[0].Energy != 3 {
+		t.Errorf("expected player's energy to be 3, but got %d", board.Players[0].Energy)
+	}
+}
