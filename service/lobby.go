@@ -18,7 +18,7 @@ func (s *Spies) Lobby(args *LobbyArgs, reply *LobbyReply) error {
 
 	utils.Assert(!s.IsHost(), "Host should not be receiving LobbyUpdate RPC")
 
-	args.Peers = slices.Clone(args.Peers)
+	s.peers = slices.Clone(args.Peers)
 
 	return nil
 }
@@ -29,7 +29,7 @@ func (p *Peer) Lobby(peers []Peer) {
 
 	args.Peers = slices.Clone(peers)
 
-	for range 5 {
+	for {
 		err := p.Call("Spies.Lobby", &args, &reply)
 		if err == nil {
 			break

@@ -17,9 +17,10 @@ const minWidth = 50
 var banner string
 
 var (
-	Address string
-	Name    string
-	Host    bool
+	Address     string
+	HostAddress string
+	Name        string
+	Host        bool
 )
 
 var (
@@ -55,17 +56,28 @@ func newModel() model {
 					Prompt("").
 					Description("Your network address").
 					Validate(utils.ValidateAddr).
-					Placeholder("unix:///tmp/spies/socket"),
+					Placeholder("unix:///tmp/spies/bob"),
 
-				huh.NewConfirm().
+				huh.NewSelect[bool]().
 					Value(&Host).
-					Affirmative("Host").
-					Negative("Join"),
+					Title("Host / Join").
+					Description("Host or join a game").
+					Options(huh.NewOption("Join", false), huh.NewOption("Host", true)),
 			),
+
+			huh.NewGroup(
+				huh.NewInput().
+					Value(&HostAddress).
+					Title("Host Address").
+					Prompt("").
+					Description("Address of game host").
+					Validate(utils.ValidateAddr).
+					Placeholder("unix:///tmp/spies/alice"),
+			).WithHideFunc(func () bool { return Host }),
 		).
 			WithWidth(minWidth).
 			WithTheme(huh.ThemeCatppuccin()).
-			WithShowHelp(false).
+			WithShowHelp(true).
 			WithShowErrors(true),
 	}
 
@@ -82,10 +94,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		appStyle = appStyle.UnsetHeight().Height(msg.Height).Width(msg.Width)
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
+		case "ctrl+c", "esc", "q":
 			return m, tea.Interrupt
-		case "esc", "q":
-			return m, tea.Quit
 		}
 	}
 

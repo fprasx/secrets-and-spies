@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"slices"
 )
 
 type ConnectArgs struct {
@@ -29,7 +28,7 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 	s.peers = append(s.peers, args.Peer)
 	s.next++
 
-	peers := slices.Clone(s.peers)
+	peers := s.Peers()
 	go s.Broadcast(func(p *Peer) { p.Lobby(peers) })
 
 	return nil

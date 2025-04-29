@@ -26,6 +26,10 @@ type Spies struct {
 	peers []Peer     // list of other peer endpoints
 }
 
+func (s *Spies) Peers() []Peer {
+	return slices.Clone(s.peers)
+}
+
 func (s *Spies) IsHost() bool {
 	return s.me == 0
 }

@@ -13,10 +13,5 @@ func init() {
 
 func main() {
 	menu.Show()
-
-	if !menu.Host {
-		menu.ShowJoin()
-	}
-
 	lobby.Show()
 }
