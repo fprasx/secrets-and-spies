@@ -1,11 +1,56 @@
 package utils
 
 import (
-	"github.com/charmbracelet/log"
+	"fmt"
+	"log"
+	"net"
+	"net/url"
 )
 
 func Assert(cond bool, msg string) {
 	if !cond {
 		log.Fatalf("Assertion failed: %v", msg)
 	}
+}
+
+func ResolveAddr(address string) (net.Addr, error) {
+	u, err := url.Parse(address)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid address format: %w", err)
+	}
+
+	network := u.Scheme
+	var addrStr string
+
+	switch network {
+	case "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6":
+		addrStr = u.Host
+	case "ip", "ip4", "ip6":
+		addrStr = u.Hostname()
+	case "unix", "unixgram", "unixpacket":
+		addrStr = u.Path
+	default:
+		return nil, fmt.Errorf("Unsupported network: %s", network)
+	}
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		return net.ResolveTCPAddr(network, addrStr)
+	case "udp", "udp4", "udp6":
+		return net.ResolveUDPAddr(network, addrStr)
+	case "ip", "ip4", "ip6":
+		return net.ResolveIPAddr(network, addrStr)
+	case "unix", "unixgram", "unixpacket":
+		return net.ResolveUnixAddr(network, addrStr)
+	default:
+		return nil, fmt.Errorf("Unsupported network: %s", network)
+	}
+}
+
+func ValidateAddr(address string) error {
+	if _, err := ResolveAddr(address); err != nil {
+		return err
+	}
+
+	return nil
 }

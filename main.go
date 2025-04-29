@@ -1,81 +1,44 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"encoding/gob"
+	"log"
 	"net"
-	"net/url"
-	"os"
 
-	"github.com/fprasx/secrets-and-spies/rpc"
+	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/charmbracelet/log"
+	"github.com/fprasx/secrets-and-spies/service"
+	"github.com/fprasx/secrets-and-spies/ui/menu"
 )
 
-func resolve(address string) (net.Addr, error) {
-	u, err := url.Parse(address)
+func init() {
+	gob.Register(&net.UnixAddr{})
+	gob.Register(&net.TCPAddr{})
+	gob.Register(&net.UDPAddr{})
+	gob.Register(&net.IPAddr{})
+
+	f, err := tea.LogToFile("debug.log", "debug")
+
 	if err != nil {
-		return nil, fmt.Errorf("Invalid address format: %w", err)
+		log.Fatal(err)
 	}
 
-	network := u.Scheme
-	var addrStr string
-
-	switch network {
-	case "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6":
-		addrStr = u.Host
-	case "ip", "ip4", "ip6":
-		addrStr = u.Hostname()
-	case "unix", "unixgram", "unixpacket":
-		addrStr = u.Path
-	default:
-		return nil, fmt.Errorf("Unsupported network: %s", network)
-	}
-
-	switch network {
-	case "tcp", "tcp4", "tcp6":
-		return net.ResolveTCPAddr(network, addrStr)
-	case "udp", "udp4", "udp6":
-		return net.ResolveUDPAddr(network, addrStr)
-	case "ip", "ip4", "ip6":
-		return net.ResolveIPAddr(network, addrStr)
-	case "unix", "unixgram", "unixpacket":
-		return net.ResolveUnixAddr(network, addrStr)
-	default:
-		return nil, fmt.Errorf("Unsupported network: %s", network)
-	}
+	defer f.Close()
 }
 
 func main() {
-	log.SetReportCaller(false)
-	log.SetReportTimestamp(false)
+	menu.Show()
 
-	hostFlag := flag.Bool("host", false, "Run as host of game instead of player")
-	addrFlag := flag.String("addr", "", "Network address with prefix, e.g. unix:///tmp/socket/")
-
-	flag.Parse()
-
-	if *addrFlag == "" {
-		log.Errorf("-addr flag is required.\n")
-		flag.Usage()
-		os.Exit(1)
+	if !menu.Host {
+		menu.ShowJoin()
 	}
 
-	host := *hostFlag
-	addr, err := resolve(*addrFlag)
-
-	if err != nil {
-		log.Errorf("-addr flag is invalid: %v.\n", addr)
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	peer := rpc.NewPeer(addr, host)
+	srv := service.
+		New(menu.Name, menu.Address).
+		WithHost(menu.Host).
+		Join(menu.HostAddress)
 
 	for {
-		select {
-		case reply := <-peer.Replies:
-			log.Info("Recieved rpc reply, ", reply)
-		}
+		_ = srv
 	}
 }
