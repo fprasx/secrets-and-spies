@@ -7,13 +7,12 @@ import (
 func multiplyMatrices(A, B [][]ff.Num) [][]ff.Num {
 	n := len(A)
 	m := len(B[0])
-	p := A[0][0].P()
 
 	result := make([][]ff.Num, n)
 	for i := 0; i < n; i++ {
 		result[i] = make([]ff.Num, m)
 		for j := 0; j < m; j++ {
-			sum := ff.New(p, 0)
+			sum := ff.New(0)
 			for k := 0; k < len(B); k++ {
 				sum = sum.Plus(A[i][k].Times(B[k][j]))
 			}
@@ -24,7 +23,6 @@ func multiplyMatrices(A, B [][]ff.Num) [][]ff.Num {
 }
 func invertMatrix(A [][]ff.Num) ([][]ff.Num, error) {
 	n := len(A)
-	p := A[0][0].P()
 
 	// Create augmented matrix (A | I)
 	M := make([][]ff.Num, n)
@@ -35,9 +33,9 @@ func invertMatrix(A [][]ff.Num) ([][]ff.Num, error) {
 		}
 		for j := n; j < 2*n; j++ {
 			if j-n == i {
-				M[i][j] = ff.New(p, 1)
+				M[i][j] = ff.New(1)
 			} else {
-				M[i][j] = ff.New(p, 0)
+				M[i][j] = ff.New(0)
 			}
 		}
 	}
@@ -45,9 +43,9 @@ func invertMatrix(A [][]ff.Num) ([][]ff.Num, error) {
 	// Forward elimination
 	for i := 0; i < n; i++ {
 		// Find pivot
-		if M[i][i].Int() == 0 {
+		if M[i][i].IsZero() {
 			for k := i + 1; k < n; k++ {
-				if M[k][i].Int() != 0 {
+				if M[k][i].IsNonZero() {
 					M[i], M[k] = M[k], M[i]
 					break
 				}

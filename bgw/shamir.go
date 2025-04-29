@@ -11,9 +11,8 @@ type Share = [2]ff.Num
 
 // evaluatePolynomial evaluates the polynomial at point x
 func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
-	p := x.P()
-	result := ff.New(p, 0)
-	power := ff.New(p, 1) // x^0
+	result := ff.New(0)
+	power := ff.New(1) // x^0
 
 	for _, coeff := range coeffs {
 		result = result.Plus(coeff.Times(power))
@@ -29,12 +28,11 @@ func ReconstructSecret(points []Share) (ff.Num, error) {
 	if t == 0 {
 		return ff.Num{}, fmt.Errorf("no points provided")
 	}
-	p := points[0][0].P()
 
-	secret := ff.New(p, 0)
+	secret := ff.New(0)
 
 	for k := 0; k < t; k++ {
-		lambda := ff.New(p, 1)
+		lambda := ff.New(1)
 		xk := points[k][0]
 
 		for j := 0; j < t; j++ {
@@ -45,9 +43,12 @@ func ReconstructSecret(points []Share) (ff.Num, error) {
 			num := xj
 			den := xj.Minus(xk)
 			lambda = lambda.Times(num.Times(den.Inv()))
+            // fmt.Printf("den: %v\n", den.BigInt())
 		}
 
 		secret = secret.Plus(lambda.Times(points[k][1]))
+        // fmt.Printf("secret: %v\n", secret.BigInt())
+        // fmt.Printf("close: %v\n", ff.New(5).Minus(secret).BigInt())
 	}
 
 	return secret, nil
@@ -67,14 +68,14 @@ func SolveLinearSystemFF(A [][]ff.Num, b []ff.Num) ([]ff.Num, error) {
 		fmt.Printf("\nMatrix after elimination step %d:\n", i)
 		for _, row := range A {
 			for _, elem := range row {
-				fmt.Printf("%d ", elem.Int())
+				fmt.Printf("%d ", elem.BigInt())
 			}
 			fmt.Println()
 		}
 		// Find pivot row
 		pivotRow := i
 		for k := i + 1; k < n; k++ {
-			if A[k][i].Int() != 0 {
+			if A[k][i].IsNonZero() {
 				pivotRow = k
 				break
 			}
@@ -83,7 +84,7 @@ func SolveLinearSystemFF(A [][]ff.Num, b []ff.Num) ([]ff.Num, error) {
 		A[i], A[pivotRow] = A[pivotRow], A[i]
 
 		// Check for singularity
-		if A[i][i].Int() == 0 {
+		if A[i][i].IsZero() {
 			return nil, errors.New("singular matrix: no solution")
 		}
 

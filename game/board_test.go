@@ -12,8 +12,8 @@ func TestBoard_ExecuteAction_Move(t *testing.T) {
 	// Create a new board with 2 cities and 1 player
 	board := &Board{
 		Graph: [][]ff.Num{
-			{ff.New(29, 1), ff.New(29, 1)},
-			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(1), ff.New(1)},
+			{ff.New(1), ff.New(1)},
 		},
 		Players: []PlayerState{
 			{City: 0, Energy: 2, Intel: 0, Revealed: false, Dead: false, nextEnergy: 2},
@@ -21,7 +21,7 @@ func TestBoard_ExecuteAction_Move(t *testing.T) {
 		Territories:     []int{-1, -1},
 		Turn:            0,
 		TurnNumber:      0,
-		seed:            ff.New(29, 1),
+		seed:            ff.New(1),
 		noCities:        2,
 		cityToBeRemoved: -1,
 	}
@@ -48,8 +48,8 @@ func TestBoard_ExecuteAction_Strike(t *testing.T) {
 	// Create a new board with 2 cities and 2 players
 	board := &Board{
 		Graph: [][]ff.Num{
-			{ff.New(29, 1), ff.New(29, 1)},
-			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(1), ff.New(1)},
+			{ff.New(1), ff.New(1)},
 		},
 		Players: []PlayerState{
 			{City: 0, Energy: 2, Intel: 0, Revealed: false, Dead: false, nextEnergy: 2},
@@ -58,7 +58,7 @@ func TestBoard_ExecuteAction_Strike(t *testing.T) {
 		Territories:     []int{-1, -1},
 		Turn:            0,
 		TurnNumber:      0,
-		seed:            ff.New(29, 1),
+		seed:            ff.New(1),
 		noCities:        2,
 		cityToBeRemoved: -1,
 	}
@@ -84,8 +84,8 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 	// Create a new board with 2 cities and 1 player
 	board := &Board{
 		Graph: [][]ff.Num{
-			{ff.New(29, 1), ff.New(29, 1)},
-			{ff.New(29, 1), ff.New(29, 1)},
+			{ff.New(1), ff.New(1)},
+			{ff.New(1), ff.New(1)},
 		},
 		Players: []PlayerState{
 			{City: 0, Energy: 2, Intel: 20, Revealed: false, Dead: false, nextEnergy: 2},
@@ -93,7 +93,7 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 		Territories:     []int{-1, -1},
 		Turn:            0,
 		TurnNumber:      0,
-		seed:            ff.New(29, 1),
+		seed:            ff.New(1),
 		noCities:        2,
 		cityToBeRemoved: -1,
 	}

@@ -51,7 +51,7 @@ func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, p int, s
 	for i := 0; i < noCities; i++ {
 		graph[i] = make([]ff.Num, noCities)
 		for j := 0; j < noCities; j++ {
-			graph[i][j] = ff.New(p, g[i][j])
+			graph[i][j] = ff.New(int64(g[i][j]))
 		}
 	}
 	return &Board{
@@ -192,6 +192,6 @@ func (b *Board) cleanupTurn() {
 }
 func (b *Board) removeCity(city int) {
 	for row := 0; row < b.noCities; row++ {
-		b.Graph[row][city] = ff.New(2, 0)
+		b.Graph[row][city] = ff.New(0)
 	}
 }
