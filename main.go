@@ -14,6 +14,6 @@ func init() {
 
 func main() {
 	menu.Show()
-	lobby.Show()
-	ui.Show()
+	service := lobby.Show()
+	ui.Show(service)
 }

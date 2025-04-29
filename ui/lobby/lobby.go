@@ -14,10 +14,6 @@ import (
 )
 
 var (
-	Service *service.Spies
-)
-
-var (
 	appStyle     = lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center)
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
 	textStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
@@ -48,8 +44,8 @@ type model struct {
 	loading bool
 	width   int
 	height  int
-	service *service.Spies
 	spinner spinner.Model
+	service *service.Spies
 	players list.Model
 }
 
@@ -78,8 +74,6 @@ func newModel() model {
 			return []key.Binding{startKey}
 		}
 	}
-
-	Service = m.service
 
 	return m
 }
@@ -196,8 +190,10 @@ func (m model) View() string {
 
 }
 
-func Show() {
-	if _, err := tea.NewProgram(newModel()).Run(); err != nil {
+func Show() *service.Spies {
+	model := newModel()
+	if _, err := tea.NewProgram(model).Run(); err != nil {
 		log.Fatal(err)
 	}
+	return model.service
 }
