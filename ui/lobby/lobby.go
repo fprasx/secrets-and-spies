@@ -1,7 +1,6 @@
 package lobby
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -17,8 +16,9 @@ var (
 )
 
 var (
-	appStyle  = lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center)
-	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+	appStyle     = lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center)
+	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
+	textStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
 )
 
 type model struct {
@@ -84,7 +84,11 @@ func (m model) View() string {
 
 	if m.loading {
 		content.WriteString(
-			fmt.Sprintf("%s%s%s", m.spinner.View(), " ", textStyle.Render("Loading...")),
+			lipgloss.JoinHorizontal(
+                lipgloss.Center,
+				spinnerStyle.Render(m.spinner.View()),
+				textStyle.MarginLeft(4).Render("Loading..."),
+			),
 		)
 	}
 

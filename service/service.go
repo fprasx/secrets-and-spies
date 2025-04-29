@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/fprasx/secrets-and-spies/utils"
+	"slices"
 )
 
 type state int
@@ -18,14 +19,14 @@ const (
 
 type Spies struct {
 	state state
-	lock  sync.Mutex  // lock to protect shared access to peer state
-	end   ClientEnd   // my network address
-	me    int         // unique id, assigned by host
-	next  int         // next unique id to be assigned by host
-	peers []ClientEnd // list of other peer endpoints
+	lock  sync.Mutex // lock to protect shared access to peer state
+	me    int        // unique id, assigned by host
+	next  int        // next unique id to be assigned by host
+	peer  Peer       // my network address
+	peers []Peer     // list of other peer endpoints
 }
 
-func (s *Spies) isHost() bool {
+func (s *Spies) IsHost() bool {
 	return s.me == 0
 }
 
@@ -38,15 +39,15 @@ func (s *Spies) Unlock() {
 }
 
 func (s *Spies) serve() {
-	log.Printf("Starting RPC server %v", s.end)
+	log.Printf("Starting RPC server %v", s.peer)
 
 	rpc.Register(s)
 
-	if utils.IsSocket(s.end.Addr.String()) {
-		os.Remove(s.end.Addr.String())
+	if utils.IsSocket(s.peer.Addr.String()) {
+		os.Remove(s.peer.Addr.String())
 	}
 
-	l, err := net.Listen(s.end.Addr.Network(), s.end.Addr.String())
+	l, err := net.Listen(s.peer.Addr.Network(), s.peer.Addr.String())
 
 	if err != nil {
 		log.Fatal(err)
@@ -73,9 +74,9 @@ func New(hostname string) *Spies {
 		log.Fatal(err)
 	}
 
-	s.end = ClientEnd{Addr: addr}
+	s.peer = Peer{Addr: addr}
 	s.state = stateLobby
-	s.peers = []ClientEnd{}
+	s.peers = []Peer{}
 	s.me = -1
 	s.next = -1
 
@@ -88,7 +89,7 @@ func (s *Spies) WithName(name string) *Spies {
 	s.Lock()
 	defer s.Unlock()
 
-	s.end.Name = name
+	s.peer.Name = name
 
 	return s
 }
@@ -100,7 +101,7 @@ func (s *Spies) WithHost(host bool) *Spies {
 	if host {
 		s.me = 0
 		s.next = 1
-		s.peers = append(s.peers, s.end)
+		s.peers = append(s.peers, s.peer)
 	}
 
 	return s
@@ -110,7 +111,7 @@ func (s *Spies) Join(hostname string) *Spies {
 	s.Lock()
 	defer s.Unlock()
 
-	if s.isHost() {
+	if s.IsHost() {
 		return s
 	}
 
@@ -120,8 +121,8 @@ func (s *Spies) Join(hostname string) *Spies {
 		log.Fatal(err)
 	}
 
-	end := ClientEnd{Addr: addr}
-	me, err := end.Connect(end)
+	end := Peer{Addr: addr}
+	me, err := end.Connect(s.peer)
 
 	if err != nil {
 		log.Fatal(err)
@@ -130,4 +131,28 @@ func (s *Spies) Join(hostname string) *Spies {
 	s.me = me
 
 	return s
+}
+
+func (s *Spies) Broadcast(thunk func(e *Peer)) {
+	var wg sync.WaitGroup
+
+	s.Lock()
+	peers := slices.Clone(s.peers)
+	me := s.me
+	s.Unlock()
+
+	for i := range peers {
+		if i == me {
+			continue
+		}
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			thunk(&peers[i])
+		}()
+	}
+
+	wg.Wait()
 }
