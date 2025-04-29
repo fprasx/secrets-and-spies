@@ -105,9 +105,9 @@ func TestMoveValidation(t *testing.T) {
 }
 func TestReconstructSecret(t *testing.T) {
 	points := []Share{
-		{ff.New(1), ff.New(10)},
-		{ff.New(2), ff.New(21)},
-		{ff.New(3), ff.New(9)},
+		{ff.New(1), ff.New(8)},
+		{ff.New(2), ff.New(13)},
+		{ff.New(3), ff.New(20)},
 	}
 
 	secret, err := ReconstructSecret(points)

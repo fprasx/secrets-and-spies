@@ -33,7 +33,7 @@ func TestBoard_ExecuteAction_Move(t *testing.T) {
 	}
 
 	// Execute the action
-	err := board.executeAction(action)
+	err := board.ExecuteAction(action)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -70,7 +70,7 @@ func TestBoard_ExecuteAction_Strike(t *testing.T) {
 	}
 
 	// Execute the action
-	err := board.executeAction(action)
+	err := board.ExecuteAction(action)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -88,23 +88,26 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 			{ff.New(1), ff.New(1)},
 		},
 		Players: []PlayerState{
-			{City: 0, Energy: 2, Intel: 20, Revealed: false, Dead: false, nextEnergy: 2},
+			{City: 0, Energy: 2, Intel: 18, Revealed: false, Dead: false, nextEnergy: 2},
+			{City: 1, Energy: 2, Intel: 20, Revealed: false, Dead: false, nextEnergy: 2},
 		},
-		Territories:     []int{-1, -1},
+		Territories:     []int{0, 1},
 		Turn:            0,
 		TurnNumber:      0,
 		seed:            ff.New(1),
 		noCities:        2,
 		cityToBeRemoved: -1,
 	}
-
 	// Create a secret mission action
 	action := Action{
 		Type: SecretMission,
 	}
-
+	ecode := board.StartTurn()
+	if ecode == 0 {
+		t.Errorf("expected not dead, got %v", ecode)
+	}
 	// Execute the action
-	err := board.executeAction(action)
+	err := board.ExecuteAction(action)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -126,7 +129,7 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 	}
 
 	// Execute the action
-	err = board.executeAction(action)
+	err = board.ExecuteAction(action)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -135,7 +138,10 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 	if board.Players[0].City != 1 {
 		t.Errorf("expected player to move to city 1, but got city %d", board.Players[0].City)
 	}
-
+	board.cleanupTurn()
+	board.StartTurn()
+	board.cleanupTurn()
+	board.StartTurn()
 	// Check if the player's energy was increased
 	if board.Players[0].Energy != 3 {
 		t.Errorf("expected player's energy to be 3, but got %d", board.Players[0].Energy)

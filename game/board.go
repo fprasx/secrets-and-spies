@@ -114,7 +114,7 @@ func (b *Board) RevealPlayer(playerID int, city int) {
 	b.Players[playerID].Revealed = true
 	b.Players[playerID].City = city
 }
-func (b *Board) executeAction(action Action) error {
+func (b *Board) ExecuteAction(action Action) error {
 	playerID := b.Turn
 	player := &b.Players[playerID]
 	b.Players[playerID].Energy--
