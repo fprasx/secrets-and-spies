@@ -317,23 +317,35 @@ func (spies *Spies) OpponentTurn(b *game.Board, playerID int, meID int) int {
 			spies.actionSent = false
 
 			spies.Unlock()
-			// for {
-			// 	time.Sleep(10 * time.Millisecond)
+		// for {
+		// 	time.Sleep(10 * time.Millisecond)
+		// }
+		case game.Strike:
+			b.Players[playerID].Energy--
+			spies.peers[playerID].SendConfirmation(spies.b.TurnNumber, meID)
+			if RPCReceiveAndValidate(spies, playerID) {
+				b.RevealPlayer(meID, b.Players[meID].City)
+				b.Players[meID].Dead = true
+				log.Printf("He killed me!\n")
+			}
+			spies.Lock()
+			spies.EndRound = true
+			spies.ConfirmCount = 0
+			spies.actionSent = false
+			spies.Unlock()
+			// dotShares := make([][2]ff.Num, len(b.Players))
+			// for oppo, _ := range b.Players {
+			// 	dotShares[oppo] = bgw.DotProductShares(shares[oppo], shares[playerID], len(b.Players))
+			// 	RPCSendNum(dotShares[oppo][1], oppo)
+			// 	// if (j.HasStrikeRep){
+			// 	// 	RPCSendVec(shares[playerID], oppo)
+			// 	// }
 			// }
-			// case game.Strike:
-			// 	dotShares := make([][2]ff.Num, len(b.Players))
-			// 	for oppo, _ := range b.Players {
-			// 		dotShares[oppo] = bgw.DotProductShares(shares[oppo], shares[playerID], len(b.Players))
-			// 		RPCSendNum(dotShares[oppo][1], oppo)
-			// 		// if (j.HasStrikeRep){
-			// 		// 	RPCSendVec(shares[playerID], oppo)
-			// 		// }
-			// 	}
-			// 	SendDotProducts(dotShares, spies)
-			// 	if RPCReceiveDotProductResult(spies) != 0 {
-			// 		b.Players[meID].Dead = true
-			//
-			// 	}
+			//	SendDotProducts(dotShares, spies)
+			//	if RPCReceiveDotProductResult(spies) != 0 {
+			//		b.Players[meID].Dead = true
+
+			//	}
 		}
 
 	}
@@ -391,22 +403,31 @@ func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(s *Sp
 			log.Printf("Done turn %v\n", b.TurnNumber)
 
 		case game.Strike:
+			for peer := range spies.Peers() {
+				if peer == spies.me {
+					continue
+				}
+
+				spies.peers[peer].SendAction(action, spies.b.TurnNumber, nil)
+			}
+
 			//TODO: Broadcast strike move
 			if !WaitForConfirmation(spies) {
 				return -1
 			}
 			//TODO: Broadcast all dot products
 			//ALL PARTIES NEED TO RECEIVE THEIR OWN DOT PRODUCTS
-			res := WaitForDotProducts(spies)
-			for oppo, j := range res {
-				if j.Eq(ff.New(1)) {
+			//res := WaitForDotProducts(spies)
+			for oppo := range len(spies.peers) {
+				res := RPCReceiveAndValidate(spies, oppo)
+				if res {
 					b.RevealPlayer(oppo, player.City)
 				} else if b.Players[oppo].HasStrikeRep {
 					//TODO: Tell them your share
 				}
 
 			}
-
+			spies.ConfirmCount = 0
 			err := b.ExecuteAction(action)
 			if err != nil {
 				return -1
