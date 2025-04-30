@@ -133,6 +133,7 @@ func (board *Board) CreateTree() *tree.Tree {
 
 func (board *Board) View() string {
 	var rows []string
+
 	for i := 0; i < 16; i += 4 {
 		var cells []string
 		for j := 0; j < 4; j += 1 {

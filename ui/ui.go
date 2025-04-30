@@ -97,13 +97,12 @@ var (
 	}
 )
 
-// TODO: maybe not hard code this here
 var (
 	cities = []board.City{
-		{Name: "Fugging, Austria", Color: "#ff0000"},
-		{Name: "Poo, Spain", Color: "#00ff00"},
-		{Name: "Bastardo, Italy", Color: "#0000ff"},
-		{Name: "Condom, France", Color: "#ff0000"},
+		{Name: "Graz, Austria", Color: "#ff0000"},
+		{Name: "Barcelona, Spain", Color: "#00ff00"},
+		{Name: "Sicily, Italy", Color: "#0000ff"},
+		{Name: "Lyon, France", Color: "#ff0000"},
 		{Name: "Batman, Turkey", Color: "#ff0000"},
 		{Name: "Vienna, Austria", Color: "#ff0000"},
 		{Name: "Berlin, Germany", Color: "#00ff00"},
@@ -188,6 +187,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	player := m.service.MyPlayer()
 	m.board.ActiveLocation = player.City
 
+	if len(m.board.Edges[m.board.ActiveLocation]) <= m.board.CurrentSelection {
+		m.board.CurrentSelection = 0
+	}
+
 	revealed := []int{}
 	states := m.service.PlayerStates()
 
@@ -255,6 +258,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	player = m.service.MyPlayer()
 	m.board.ActiveLocation = player.City
 
+	if len(m.board.Edges[m.board.ActiveLocation]) <= m.board.CurrentSelection {
+		m.board.CurrentSelection = 0
+	}
+
 	if !m.service.IsMyTurn() {
 		m.service.DoTurn(func(s *service.Spies) game.Action { return game.Action{} })
 	}
@@ -292,6 +299,10 @@ func (m *model) viewButtons() string {
 }
 
 func (m *model) View() string {
+	if len(m.board.Edges[m.board.ActiveLocation]) <= m.board.CurrentSelection {
+		m.board.CurrentSelection = 0
+	}
+
 	if !m.dead {
 		buttons := m.viewButtons()
 
