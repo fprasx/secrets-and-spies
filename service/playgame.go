@@ -78,7 +78,7 @@ func OpponentTurn(b *game.Board, playerID int, spies *Spies, meID int, shares []
 		switch action.Type {
 		case game.Move:
 			newshare := RPCReceiveVec(spies)
-			valshares, _ := bgw.ValidateMoveShares(b.Graph, b.NoCities, shares[playerID], newshare, len(b.Players))
+			//		valshares, _ := bgw.ValidateMoveShares(b.Graph, b.NoCities, shares[playerID], newshare, len(b.Players))
 
 			//TODO: Broadcast valshares to everyone
 
@@ -92,9 +92,9 @@ func OpponentTurn(b *game.Board, playerID int, spies *Spies, meID int, shares []
 				return -1
 			}
 
-			for oppo, j := range b.Players {
-				//TODO: Send dot product of oppo*mover to oppo
-			}
+			//	for oppo, j := range b.Players {
+			//TODO: Send dot product of oppo*mover to oppo
+			//	}
 			//this receives just the dot product of my location and oppo location
 			if RPCReceiveAndValidate(spies) == 1 {
 				b.RevealPlayer(playerID, b.Players[meID].City)
@@ -130,7 +130,7 @@ func MyTurn(b *game.Board, playerID int, spies *Spies) int {
 		switch action.Type {
 		case game.Move:
 			//TODO: Broadcast Move
-			shares, _ := bgw.ShareLocation(player.City, b.NoCities, b.T, len(b.Players))
+			//	shares, _ := bgw.ShareLocation(player.City, b.NoCities, b.T, len(b.Players))
 			//TODO: communicate share to each party
 
 			//TODO: Broadcast valshares to everyone

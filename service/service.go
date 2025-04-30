@@ -93,6 +93,10 @@ func (s *Spies) serve() {
 	}()
 }
 
+// alice := service.New("unix:/tmp/spies/a").WithName("Alice").WithHost(true)
+//bob := service.New("unix:/tmp/spies/b").WithName("Bob").WithHost(false)
+// bob.Join("unix:/tmp/spies/a")
+
 func New(hostname string) *Spies {
 	s := new(Spies)
 
