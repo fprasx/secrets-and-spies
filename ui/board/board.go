@@ -2,8 +2,8 @@ package board
 
 import (
 	"log"
+	"slices"
 	"strings"
-    "slices"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -107,18 +107,18 @@ func (board Board) View() string {
 				cellStyle = cellStyle.
 					BorderForeground(lipgloss.Color("#00ff00")).
 					Foreground(lipgloss.Color("#00ff00"))
-			} else if slices.Contains(board.edges[board.activeLocation], i + j) {
+			} else if slices.Contains(board.edges[board.activeLocation], i+j) {
 				cellStyle = cellStyle.
 					BorderForeground(lipgloss.Color("#0000ff")).
 					Foreground(lipgloss.Color("#0000ff"))
 
-            }
+			}
 			cells = append(cells, cellStyle.Render(board.cities[i+j].Name))
 		}
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 	}
 	grid := lipgloss.JoinVertical(lipgloss.Left, rows...)
-    return grid
+	return grid
 }
 
 func Show(cities []City, edges map[int][]int, initialLocation City) {

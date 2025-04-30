@@ -7,11 +7,14 @@ import (
 
 var (
 	titleStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#cba6f7"))
-	descriptionStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#7f849c"))
+	descriptionStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4"))
 	containerStyle   = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder(), true, false, false, false).
-				Padding(0, 1)
-	activeContainerStyle = containerStyle.BorderForeground(lipgloss.Color("#a6e3a1"))
+				Padding(0, 1).
+				BorderForeground(lipgloss.Color("#7f849c"))
+	activeContainerStyle = containerStyle.
+				UnsetBorderForeground().
+				BorderForeground(lipgloss.Color("#a6e3a1"))
 )
 
 type HoverMsg struct {
@@ -53,18 +56,8 @@ func (m *Model) View() string {
 	)
 }
 
-func New() *Model {
-	return new(Model)
-}
-
-func (m *Model) WithTitle(title string) *Model {
-	m.title = title
-	return m
-}
-
-func (m *Model) WithDesciption(description string) *Model {
-	m.description = description
-	return m
+func New(title, description string) *Model {
+	return &Model{title: title, description: description, hovered: false}
 }
 
 func (m *Model) SetHovered(hovered bool) *Model {

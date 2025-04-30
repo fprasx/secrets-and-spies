@@ -18,10 +18,10 @@ type model struct {
 func newModel() *model {
 	m := &model{
 		buttons: []*button.Model{
-			button.New().WithTitle("Capture").WithDesciption("Capture this city"),
-			button.New().WithTitle("Wait").WithDesciption("Stay at this city"),
-			button.New().WithTitle("Strike").WithDesciption("Strike this city"),
-			button.New().WithTitle("Move").WithDesciption("Move to city"),
+			button.New("Capture", "Capture this city"),
+			button.New("Wait", "Stay at this city"),
+			button.New("Strike","Strike this city"),
+			button.New("Move","Move to city"),
 		},
 		active: 0,
 	}
