@@ -18,23 +18,23 @@ type City struct {
 
 type Board struct {
 	// Game state info
-	activeLocation int
-	cities         []City
-	edges          map[int][]int
+	ActiveLocation int
+	Cities         []City
+	Edges          map[int][]int
 
 	// Precomputed info for rendering
-	maxNameLen int
+	MaxNameLen int
 
 	// Interactive board info
-	currentSelection int
+	CurrentSelection int
 }
 
 func (b *Board) nextCity() int {
-	return (b.currentSelection + 1) % len(b.edges[b.activeLocation])
+	return (b.CurrentSelection + 1) % len(b.Edges[b.ActiveLocation])
 }
 
 func (b *Board) prevCity() int {
-	return (b.currentSelection - 1 + len(b.edges[b.activeLocation])) % len(b.edges[b.activeLocation])
+	return (b.CurrentSelection - 1 + len(b.Edges[b.ActiveLocation])) % len(b.Edges[b.ActiveLocation])
 }
 
 // item must be in slice
@@ -61,11 +61,11 @@ func longestCityName(cities []City) int {
 func NewBoard(cities []City, edges map[int][]int, initialLocation City) *Board {
 	activeLocation := indexOf(cities, initialLocation)
 	return &Board{
-		activeLocation:   activeLocation,
-		cities:           cities,
-		edges:            edges,
-		maxNameLen:       longestCityName(cities),
-		currentSelection: 0,
+		ActiveLocation:   activeLocation,
+		Cities:           cities,
+		Edges:            edges,
+		MaxNameLen:       longestCityName(cities),
+		CurrentSelection: 0,
 	}
 }
 
@@ -79,9 +79,9 @@ func (board *Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "down", "j":
-			board.currentSelection = board.nextCity()
+			board.CurrentSelection = board.nextCity()
 		case "up", "k":
-			board.currentSelection = board.prevCity()
+			board.CurrentSelection = board.prevCity()
 		case "ctrl+c", "esc", "q":
 			return board, tea.Interrupt
 		}
@@ -97,35 +97,35 @@ func PadRight(s string, length int) string {
 }
 
 func (b *Board) activeCity() string {
-	return b.cities[b.activeLocation].Name
+	return b.Cities[b.ActiveLocation].Name
 }
 
 func (board *Board) CreateTree() *tree.Tree {
 	visited := make(map[int]bool)
-	queue := []int{board.activeLocation}
+	queue := []int{board.ActiveLocation}
 	parent := make(map[int]int)
 	order := []int{}
-	treebuilder := map[int]*tree.Tree{board.activeLocation: tree.Root(board.activeCity())}
+	treebuilder := map[int]*tree.Tree{board.ActiveLocation: tree.Root(board.activeCity())}
 
-	visited[board.activeLocation] = true
+	visited[board.ActiveLocation] = true
 
 	for len(queue) > 0 {
 		node := queue[0]
 		queue = queue[1:]
 
 		order = append(order, node)
-		for _, neighbor := range board.edges[node] {
+		for _, neighbor := range board.Edges[node] {
 			if !visited[neighbor] {
 				visited[neighbor] = true
 				parent[neighbor] = node
 				queue = append(queue, neighbor)
-				newtree := tree.Root(board.cities[neighbor].Name)
+				newtree := tree.Root(board.Cities[neighbor].Name)
 				treebuilder[node].Child(newtree)
 				treebuilder[neighbor] = newtree
 			}
 		}
 	}
-	return treebuilder[board.activeLocation]
+	return treebuilder[board.ActiveLocation]
 }
 
 func (board *Board) View() string {
@@ -134,16 +134,16 @@ func (board *Board) View() string {
 		var cells []string
 		for j := 0; j < 4; j += 1 {
 			cellStyle := lipgloss.NewStyle().
-				Width(board.maxNameLen).
+				Width(board.MaxNameLen).
 				Align(lipgloss.Center).
 				Border(lipgloss.RoundedBorder()).
 				Margin(0, 1).MarginBottom(1)
 
-			if i+j == board.activeLocation {
+			if i+j == board.ActiveLocation {
 				cellStyle = cellStyle.
 					BorderForeground(lipgloss.Color("#00ff00"))
-			} else if slices.Contains(board.edges[board.activeLocation], i+j) {
-				if i+j == board.edges[board.activeLocation][board.currentSelection] {
+			} else if slices.Contains(board.Edges[board.ActiveLocation], i+j) {
+				if i+j == board.Edges[board.ActiveLocation][board.CurrentSelection] {
 					cellStyle = cellStyle.
 						BorderForeground(lipgloss.Color("#0000ff"))
 				} else {
@@ -152,7 +152,7 @@ func (board *Board) View() string {
 				}
 
 			}
-			cells = append(cells, cellStyle.Render(board.cities[i+j].Name))
+			cells = append(cells, cellStyle.Render(board.Cities[i+j].Name))
 		}
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 	}

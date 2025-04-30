@@ -314,3 +314,10 @@ func (s *Spies) HostStart() {
 	s.started = true
 	s.Unlock()
 }
+
+func (s *Spies) MyPlayer() game.PlayerState {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.b.Players[s.me]
+}
