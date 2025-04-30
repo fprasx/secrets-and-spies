@@ -33,7 +33,7 @@ type keyMap struct {
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
 // of the key.Map interface.
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Confirm}
+	return []key.Binding{k.Help}
 }
 
 // FullHelp returns keybindings for the expanded help view. It's part of the
@@ -48,31 +48,31 @@ func (k keyMap) FullHelp() [][]key.Binding {
 var keys = keyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "move up"),
+		key.WithHelp(" ↑/k ", " ← city "),
 	),
 	Down: key.NewBinding(
 		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "move down"),
+		key.WithHelp(" ↓/j ", " city → "),
 	),
 	Left: key.NewBinding(
 		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "move left"),
+		key.WithHelp(" ←/h ", " ← action "),
 	),
 	Right: key.NewBinding(
 		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "move right"),
+		key.WithHelp(" →/l ", " action → "),
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
+		key.WithHelp(" ? ", " help "),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
+		key.WithHelp(" q ", " quit "),
 	),
 	Confirm: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("enter", "select action"),
+		key.WithHelp(" enter ", " confirm "),
 	),
 }
 
@@ -160,6 +160,8 @@ func newModel(service *service.Spies) *model {
 		service: service,
 		active:  wait,
 		board:   board.NewBoard(cities, edges),
+		width:   260,
+		height:  71,
 		dead:    false,
 	}
 }
@@ -207,6 +209,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.help.Width = 100
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.Up):
@@ -295,6 +298,18 @@ func (m *model) viewButtons() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, buttons...)
 }
 
+func (m *model) borderView(text string) string {
+	color := palette.Red
+
+	return lipgloss.PlaceHorizontal(
+		200,
+		lipgloss.Left,
+		lipgloss.NewStyle().Bold(true).Foreground(color).Render(text),
+		lipgloss.WithWhitespaceChars("/"),
+		lipgloss.WithWhitespaceForeground(color),
+	)
+}
+
 func (m *model) View() string {
 	if len(m.board.Edges[m.board.ActiveLocation]) <= m.board.CurrentSelection {
 		m.board.CurrentSelection = 0
@@ -307,8 +322,17 @@ func (m *model) View() string {
 			Width(m.width).
 			Height(m.height).
 			Render(
-				m.board.View() + "\n\n" + buttons + "\n\n\n",
-			)
+				lipgloss.JoinVertical(lipgloss.Center,
+					m.borderView("SECRETS AND SPIES "),
+					"\n\n",
+					lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(4).Render(m.board.View()),
+					"\n\n",
+					buttons,
+					"\n\n\n",
+					lipgloss.NewStyle().Foreground(palette.Overlay1).Render(m.help.View(keys)),
+					"\n\n",
+					m.borderView(""),
+				))
 	} else {
 		return containerStyle.
 			Width(m.width).

@@ -142,12 +142,12 @@ func (board *Board) View() string {
 				Border(lipgloss.RoundedBorder()).
 				Margin(0, 1).MarginBottom(1)
 
-			if slices.Contains(board.Revealed, i+j) {
-				cellStyle = cellStyle.
-					BorderForeground(palette.Yellow)
-			} else if i+j == board.ActiveLocation && slices.Contains(board.Revealed, i+j) {
+			if i+j == board.ActiveLocation && slices.Contains(board.Revealed, i+j) {
 				cellStyle = cellStyle.
 					BorderForeground(palette.Red)
+			} else if slices.Contains(board.Revealed, i+j) {
+				cellStyle = cellStyle.
+					BorderForeground(palette.Yellow)
 			} else if i+j == board.ActiveLocation {
 				cellStyle = cellStyle.
 					BorderForeground(lipgloss.Color("#00ff00"))
