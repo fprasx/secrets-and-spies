@@ -8,7 +8,7 @@ import (
 )
 
 // ShareSecret constructs shares according to Shamir's algorithm
-func ShareSecret(secret ff.Num, t int, n int) ([]Share, error) {
+func ShareSecret(secret ff.Num, t int, n int) ([][2]ff.Num, error) {
 	if t > n {
 		return nil, fmt.Errorf("threshold cannot be greater than number of parties")
 	}
@@ -26,11 +26,11 @@ func ShareSecret(secret ff.Num, t int, n int) ([]Share, error) {
 	}
 
 	// Generate shares (i, f(i))
-	shares := make([]Share, n)
+	shares := make([][2]ff.Num, n)
 	for i := 1; i <= n; i++ {
 		x := ff.New(int64(i))
 		y := evaluatePolynomial(coeffs, x)
-		shares[i-1] = Share{x, y}
+		shares[i-1] = [2]ff.Num{x, y}
 	}
 
 	return shares, nil
@@ -44,7 +44,7 @@ func DegreeReduce(g []ff.Num, t int) ([]ff.Num, error) {
 	V := make([][]ff.Num, n)
 	for i := 0; i < n; i++ {
 		V[i] = make([]ff.Num, n)
-		x := ff.New(int64(i+1)) // Party indices are 1-based
+		x := ff.New(int64(i + 1)) // Party indices are 1-based
 		power := ff.New(1)
 		for j := 0; j < n; j++ {
 			V[i][j] = power

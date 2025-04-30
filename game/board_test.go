@@ -22,8 +22,9 @@ func TestBoard_ExecuteAction_Move(t *testing.T) {
 		Turn:            0,
 		TurnNumber:      0,
 		seed:            ff.New(1),
-		noCities:        2,
+		NoCities:        2,
 		cityToBeRemoved: -1,
+		T:               2,
 	}
 
 	// Create a move action
@@ -59,8 +60,9 @@ func TestBoard_ExecuteAction_Strike(t *testing.T) {
 		Turn:            0,
 		TurnNumber:      0,
 		seed:            ff.New(1),
-		noCities:        2,
+		NoCities:        2,
 		cityToBeRemoved: -1,
+		T:               2,
 	}
 
 	// Create a strike action
@@ -95,8 +97,9 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 		Turn:            0,
 		TurnNumber:      0,
 		seed:            ff.New(1),
-		noCities:        2,
+		NoCities:        2,
 		cityToBeRemoved: -1,
+		T:               2,
 	}
 	// Create a secret mission action
 	action := Action{
@@ -138,9 +141,9 @@ func TestBoard_ExecuteAction_SecretMission(t *testing.T) {
 	if board.Players[0].City != 1 {
 		t.Errorf("expected player to move to city 1, but got city %d", board.Players[0].City)
 	}
-	board.cleanupTurn()
+	board.CleanupTurn()
 	board.StartTurn()
-	board.cleanupTurn()
+	board.CleanupTurn()
 	board.StartTurn()
 	// Check if the player's energy was increased
 	if board.Players[0].Energy != 3 {

@@ -7,8 +7,6 @@ import (
 	"github.com/fprasx/secrets-and-spies/ff"
 )
 
-type Share = [2]ff.Num
-
 // evaluatePolynomial evaluates the polynomial at point x
 func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
 	result := ff.New(0)
@@ -23,7 +21,7 @@ func evaluatePolynomial(coeffs []ff.Num, x ff.Num) ff.Num {
 }
 
 // assumes t-1 degree poly
-func ReconstructSecret(points []Share) (ff.Num, error) {
+func ReconstructSecret(points [][2]ff.Num) (ff.Num, error) {
 	t := len(points)
 	if t == 0 {
 		return ff.Num{}, fmt.Errorf("no points provided")
@@ -43,12 +41,12 @@ func ReconstructSecret(points []Share) (ff.Num, error) {
 			num := xj
 			den := xj.Minus(xk)
 			lambda = lambda.Times(num.Times(den.Inv()))
-            // fmt.Printf("den: %v\n", den.BigInt())
+			// fmt.Printf("den: %v\n", den.BigInt())
 		}
 
 		secret = secret.Plus(lambda.Times(points[k][1]))
-        // fmt.Printf("secret: %v\n", secret.BigInt())
-        // fmt.Printf("close: %v\n", ff.New(5).Minus(secret).BigInt())
+		// fmt.Printf("secret: %v\n", secret.BigInt())
+		// fmt.Printf("close: %v\n", ff.New(5).Minus(secret).BigInt())
 	}
 
 	return secret, nil

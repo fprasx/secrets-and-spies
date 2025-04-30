@@ -104,7 +104,7 @@ func TestMoveValidation(t *testing.T) {
 	}
 }
 func TestReconstructSecret(t *testing.T) {
-	points := []Share{
+	points := [][2]ff.Num{
 		{ff.New(1), ff.New(8)},
 		{ff.New(2), ff.New(13)},
 		{ff.New(3), ff.New(20)},
@@ -153,9 +153,9 @@ func TestDotProduct(t *testing.T) {
 		t.Fatalf("ShareLocation failed: %v", err)
 	}
 
-	newShares := make([]Share, n)
+	newShares := make([][2]ff.Num, n)
 	for i := 0; i < n; i++ {
-		column := make([]Share, noCities)
+		column := make([][2]ff.Num, noCities)
 		for j := 0; j < noCities; j++ {
 			column[j] = shares[j][i]
 		}

@@ -10,6 +10,7 @@ import (
 
 	"slices"
 
+	"github.com/fprasx/secrets-and-spies/game"
 	"github.com/fprasx/secrets-and-spies/utils"
 )
 
@@ -21,6 +22,7 @@ const (
 )
 
 type Spies struct {
+	board *game.Board
 	state state
 	lock  sync.Mutex // lock to protect shared access to peer state
 	me    int        // unique id, assigned by host

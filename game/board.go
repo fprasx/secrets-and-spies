@@ -13,8 +13,9 @@ type Board struct {
 	Turn            int           // which player's turn it is
 	TurnNumber      int           // overall turn number (to handle city disappearance every 2 turns)
 	seed            ff.Num
-	noCities        int
+	NoCities        int
 	cityToBeRemoved int
+	T               int
 }
 
 type PlayerState struct {
@@ -29,22 +30,7 @@ type PlayerState struct {
 	nextEnergy   int
 }
 
-func RPCSendVec(vec [][2]ff.Num, party int) error {
-	return nil
-
-}
-func RPCBroadcastVec([][2]ff.Num) error {
-	return nil
-
-}
-func RPCReceiveVec() error {
-	return nil
-}
-func MyTurn(b *Board) int {
-	return b.Turn
-}
-
-func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, p int, seed ff.Num) *Board {
+func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, t int, seed ff.Num) *Board {
 	territories := make([]int, noCities)
 	for i := range territories {
 		territories[i] = -1 // all cities uncaptured initially except for initialCities
@@ -76,8 +62,9 @@ func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, p int, s
 		Turn:            0,
 		TurnNumber:      0,
 		seed:            seed,
-		noCities:        noCities,
+		NoCities:        noCities,
 		cityToBeRemoved: -1,
+		T:               t,
 	}
 }
 
@@ -88,6 +75,7 @@ func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, p int, s
 type Action struct {
 	Type       ActionType
 	TargetCity int // for Move or CaptureCity
+	Target     int // for Locate
 }
 
 type ActionType int
@@ -97,7 +85,6 @@ const (
 	Move        ActionType = iota
 	Strike                 //populate targetcity with the city the player is on
 	CaptureCity            //populate targetcity with the city the player is on
-	SpendIntel
 	Locate
 	DeepCoverSpend
 	SecretMission
@@ -188,8 +175,8 @@ func (b *Board) ExecuteAction(action Action) error {
 	return nil
 }
 
-// cleanupTurn handles end-of-turn duties: intel generation, turn advancing
-func (b *Board) cleanupTurn() {
+// CleanupTurn handles end-of-turn duties: intel generation, turn advancing
+func (b *Board) CleanupTurn() {
 
 	// Advance turn
 
@@ -206,7 +193,7 @@ func (b *Board) cleanupTurn() {
 	b.TurnNumber++
 }
 func (b *Board) removeCity(city int) {
-	for row := 0; row < b.noCities; row++ {
+	for row := 0; row < b.NoCities; row++ {
 		b.Graph[row][city] = ff.New(0)
 	}
 }
