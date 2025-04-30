@@ -3,10 +3,11 @@ package button
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/fprasx/secrets-and-spies/ui/palette"
 )
 
 var (
-	titleStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#cba6f7"))
+	titleStyle       = lipgloss.NewStyle().Foreground(palette.Blue)
 	descriptionStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4"))
 	containerStyle   = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder(), true, false, false, false).
