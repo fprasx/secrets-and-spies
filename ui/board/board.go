@@ -1,12 +1,14 @@
 package board
 
 import (
+	"fmt"
 	"log"
 	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/tree"
 )
 
 type City struct {
@@ -15,11 +17,16 @@ type City struct {
 }
 
 type Board struct {
+	// Game state info
 	activeLocation int
 	cities         []City
 	edges          map[int][]int
 
+	// Precomputed info for rendering
 	maxNameLen int
+
+	// Interactive board info
+	currentSelection int
 }
 
 func (b *Board) nextCity() int {
@@ -52,11 +59,13 @@ func longestCityName(cities []City) int {
 
 // initialLocation must be one of the specified cities
 func NewBoard(cities []City, edges map[int][]int, initialLocation City) Board {
+	activeLocation := indexOf(cities, initialLocation)
 	return Board{
-		activeLocation: indexOf(cities, initialLocation),
-		cities:         cities,
-		edges:          edges,
-		maxNameLen:     longestCityName(cities),
+		activeLocation:   activeLocation,
+		cities:           cities,
+		edges:            edges,
+		maxNameLen:       longestCityName(cities),
+		currentSelection: edges[activeLocation][0],
 	}
 }
 
@@ -91,17 +100,45 @@ func (b Board) activeCity() string {
 	return b.cities[b.activeLocation].Name
 }
 
+func (board Board) CreateTree() *tree.Tree {
+	visited := make(map[int]bool)
+	queue := []int{board.activeLocation}
+	parent := make(map[int]int)
+	order := []int{}
+	treebuilder := map[int]*tree.Tree{board.activeLocation: tree.Root(board.activeCity())}
+
+	visited[board.activeLocation] = true
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		order = append(order, node)
+		for _, neighbor := range board.edges[node] {
+			if !visited[neighbor] {
+				visited[neighbor] = true
+				parent[neighbor] = node
+				queue = append(queue, neighbor)
+				newtree := tree.Root(board.cities[neighbor].Name)
+				treebuilder[node].Child(newtree)
+				treebuilder[neighbor] = newtree
+			}
+		}
+	}
+	return treebuilder[board.activeLocation]
+}
+
 func (board Board) View() string {
+	fmt.Printf("")
 	var rows []string
 	for i := 0; i < 16; i += 4 {
 		var cells []string
 		for j := 0; j < 4; j += 1 {
 			cellStyle := lipgloss.NewStyle().
-				Width(board.maxNameLen+2).
+				Width(board.maxNameLen).
 				Align(lipgloss.Center).
 				Border(lipgloss.RoundedBorder()).
-				Padding(1, 0).
-				Margin(2, 2)
+				Margin(0, 1).MarginBottom(1)
 
 			if i+j == board.activeLocation {
 				cellStyle = cellStyle.
@@ -118,6 +155,7 @@ func (board Board) View() string {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 	}
 	grid := lipgloss.JoinVertical(lipgloss.Left, rows...)
+	grid = lipgloss.JoinHorizontal(lipgloss.Left, grid, fmt.Sprintf("%v", board.CreateTree()))
 	return grid
 }
 
