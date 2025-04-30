@@ -43,6 +43,7 @@ func (e *Peer) Connect(peer Peer) (int, error) {
 
 	for {
 		err := e.Call("Spies.ConnectRPC", &args, &reply)
+		fmt.Printf("err: %v\n", err)
 		if err == nil {
 			break
 		}

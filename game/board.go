@@ -14,7 +14,7 @@ type Board struct {
 	TurnNumber      int           // overall turn number (to handle city disappearance every 2 turns)
 	seed            ff.Num
 	NoCities        int
-	cityToBeRemoved int
+	CityToBeRemoved int
 	T               int
 }
 
@@ -27,7 +27,7 @@ type PlayerState struct {
 	Dead         bool // whether the player is dead
 	Revealed     bool // whether the player is revealed
 	DeepCover    bool // whether currently under Deep Cover
-	nextEnergy   int
+	NextEnergy   int
 }
 
 func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, t int, seed ff.Num) *Board {
@@ -44,7 +44,7 @@ func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, t int, s
 			Intel:      0,
 			Revealed:   false,
 			Dead:       false,
-			nextEnergy: 2,
+			NextEnergy: 2,
 		}
 		territories[initialCities[i]] = i
 	}
@@ -63,7 +63,7 @@ func NewBoard(noCities, numPlayers int, g [][]int, initialCities []int, t int, s
 		TurnNumber:      0,
 		seed:            seed,
 		NoCities:        noCities,
-		cityToBeRemoved: -1,
+		CityToBeRemoved: -1,
 		T:               t,
 	}
 }
@@ -107,8 +107,8 @@ func (b *Board) StartTurn() int {
 	if player.Dead {
 		return 0
 	}
-	player.Energy = player.nextEnergy
-	player.nextEnergy = 2
+	player.Energy = player.NextEnergy
+	player.NextEnergy = 2
 	player.DeepCover = false
 	return 1
 }
@@ -155,7 +155,7 @@ func (b *Board) ExecuteAction(action Action) error {
 			return errors.New("not enough intel for secret mission")
 		}
 		player.Intel -= 20
-		player.nextEnergy++
+		player.NextEnergy++
 	case StrikeReports:
 		if player.Intel < 10 {
 			return errors.New("not enough intel for strike reports")
@@ -182,12 +182,12 @@ func (b *Board) CleanupTurn() {
 
 	b.Turn = (b.Turn + 1) % len(b.Players)
 	if b.Turn == 0 {
-		if b.cityToBeRemoved == -1 {
+		if b.CityToBeRemoved == -1 {
 			//TODO: USE SEED
-			b.cityToBeRemoved = 0
+			b.CityToBeRemoved = 0
 		} else {
-			b.removeCity(b.cityToBeRemoved)
-			b.cityToBeRemoved = -1
+			b.removeCity(b.CityToBeRemoved)
+			b.CityToBeRemoved = -1
 		}
 	}
 	b.TurnNumber++

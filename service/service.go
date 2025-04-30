@@ -1,14 +1,19 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/rpc"
 	"os"
+	"strconv"
 	"sync"
+	"time"
 
 	"slices"
 
+	"github.com/fprasx/secrets-and-spies/bgw"
+	"github.com/fprasx/secrets-and-spies/ff"
 	"github.com/fprasx/secrets-and-spies/game"
 	"github.com/fprasx/secrets-and-spies/utils"
 )
@@ -16,13 +21,20 @@ import (
 type state int
 
 type Spies struct {
-	b       *game.Board
-	started bool       // true if the game has started
-	lock    sync.Mutex // lock to protect shared access to peer state
-	me      int        // unique id, assigned by host
-	next    int        // next unique id to be assigned by host
-	peer    Peer       // my network address
-	peers   []Peer     // list of other peer endpoints
+	b              *game.Board
+	started        bool       // true if the game has started
+	lock           sync.Mutex // lock to protect shared access to peer state
+	me             int        // unique id, assigned by host
+	next           int        // next unique id to be assigned by host
+	peer           Peer       // my network address
+	peers          []Peer     // list of other peer endpoints
+	OppoAction     game.Action
+	actionSent     bool
+	receivedNumber int
+	Shares         [][][][2]ff.Num
+	NewShares      [][][2]ff.Num
+	ConfirmCount   int
+	EndRound       bool
 }
 
 func (s *Spies) Started() bool {
@@ -150,7 +162,7 @@ func (s *Spies) Join(hostname string) *Spies {
 	s.Lock()
 	peer := s.peer
 	s.Unlock()
-
+	fmt.Printf("me %v \n", s.me)
 	me, err := end.Connect(peer)
 
 	if err != nil {
@@ -176,7 +188,6 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 		if i == me {
 			continue
 		}
-
 		wg.Add(1)
 
 		go func() {
@@ -188,6 +199,92 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 	wg.Wait()
 }
 
+func (s *Spies) PlayGame() {
+	t := 2
+	s.b = game.NewBoard(4, 2,
+		[][]int{{1, 1, 1, 1},
+			{1, 1, 0, 1},
+			{1, 0, 1, 1},
+			{1, 1, 1, 1}}, []int{0, 1}, t, ff.New(1))
+	s.actionSent = false
+	s.Shares = make([][][][2]ff.Num, len(s.b.Players))
+	s.NewShares = make([][][2]ff.Num, len(s.b.Players))
+	s.EndRound = true
+	s.Lock()
+	for s.started == false {
+		s.Unlock()
+		time.Sleep(10 * time.Millisecond)
+		s.Lock()
+	}
+	s.Unlock()
+	fmt.Printf("STARTED %v\n", s.me)
+	shares, _ := bgw.ShareLocation(s.b.Players[s.me].City, s.b.NoCities, t, len(s.b.Players))
+	for i := range s.b.Players {
+		column := make([][2]ff.Num, s.b.NoCities)
+		for j := 0; j < s.b.NoCities; j++ {
+			column[j] = shares[j][i]
+		}
+		if i != s.me {
+			go s.peers[i].SendLocation(shares, 0, s.me)
+		} else {
+			s.Shares[s.me] = shares
+		}
+	}
+	// for i := range s.b.Players {
+	// 	column := make([][2]ff.Num, s.b.NoCities)
+	// 	for j := 0; j < s.b.NoCities; j++ {
+	// 		column[j] = shares[j][i]
+	// 	}
+	// 	if i != s.me {
+	// 		go s.peers[i].SendLocation(column, 0, s.me)
+	// 	} else {
+	// 		s.Shares[s.me] = column
+	// 	}
+	// }
+	s.Lock()
+	for s.receivedNumber != len(s.b.Players)-1 {
+		s.Unlock()
+		time.Sleep(10 * time.Millisecond)
+		s.Lock()
+	}
+	s.Unlock()
+	fmt.Println("all locations received")
+	index := 0
+	var actions []string
+	if s.me == 0 {
+
+		actions = []string{"m1", "m1", "m0", "m0"}
+	} else {
+		actions = []string{"m0", "m0", "m3", "m3"}
+	}
+
+	for {
+
+		s.DoTurn(s.b, s.me, nil, func(spies *Spies) game.Action {
+			if index >= len(actions) {
+				fmt.Println("Ran out of actions")
+				for {
+					time.Sleep(10 * time.Millisecond)
+				}
+			}
+			input := actions[index]
+			index++
+			if input[0:1] == "m" {
+				city, _ := strconv.Atoi(input[1:])
+				return game.Action{
+					Type:       game.Move,
+					TargetCity: city,
+				}
+			}
+			panic("invalid input")
+			return game.Action{}
+			// return game.Action{
+			// 	Type:       game.Move,
+			// 	TargetCity: 1,
+			// }
+		})
+	}
+}
 func (s *Spies) HostStart() {
 	s.Lock()
 	if s.started {

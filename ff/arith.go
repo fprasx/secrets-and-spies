@@ -7,7 +7,7 @@ import (
 )
 
 type Num struct {
-	inner *big.Int
+	Inner *big.Int
 }
 
 var p *big.Int = nil
@@ -38,31 +38,31 @@ func modify(num *big.Int) *big.Int {
 }
 
 func New(val int64) Num {
-	return Num{inner: big.NewInt(int64(val))}
+	return Num{Inner: big.NewInt(int64(val))}
 }
 
 func (a Num) Plus(b Num) Num {
-	aa := a.inner
-	bb := b.inner
+	aa := a.Inner
+	bb := b.Inner
 	sum := new(big.Int)
 	sum.Add(aa, bb)
-	return Num{inner: modify(sum)}
+	return Num{Inner: modify(sum)}
 }
 
 func (a Num) Minus(b Num) Num {
-	aa := a.inner
-	bb := b.inner
+	aa := a.Inner
+	bb := b.Inner
 	diff := new(big.Int)
 	diff.Sub(aa, bb)
-	return Num{inner: modify(diff)}
+	return Num{Inner: modify(diff)}
 }
 
 func (a Num) Times(b Num) Num {
-	aa := a.inner
-	bb := b.inner
+	aa := a.Inner
+	bb := b.Inner
 	prod := new(big.Int)
 	prod.Mul(aa, bb)
-	return Num{inner: modify(prod)}
+	return Num{Inner: modify(prod)}
 }
 
 func (a Num) Div(b Num) Num {
@@ -70,36 +70,36 @@ func (a Num) Div(b Num) Num {
 }
 
 func (a Num) Inv() Num {
-	aa := a.inner
+	aa := a.Inner
 	inv := new(big.Int)
 	inv.ModInverse(aa, FieldPrime())
-	return Num{inner: inv}
+	return Num{Inner: inv}
 }
 
 func (a Num) Pow(exponent *big.Int) Num {
-	aa := a.inner
+	aa := a.Inner
 	res := new(big.Int)
 	res.Exp(aa, exponent, FieldPrime())
-	return Num{inner: res}
+	return Num{Inner: res}
 }
 
 func (a Num) IsZero() bool {
-	return a.inner.Sign() == 0
+	return a.Inner.Sign() == 0
 }
 
 func (a Num) IsNonZero() bool {
-	utils.Assert(a.inner.Sign() != -1, "field element shouldn't be negative")
-	return a.inner.Sign() == 1
+	utils.Assert(a.Inner.Sign() != -1, "field element shouldn't be negative")
+	return a.Inner.Sign() == 1
 }
 
 func (a Num) Eq(b Num) bool {
-	return a.inner.Cmp(b.inner) == 0
+	return a.Inner.Cmp(b.Inner) == 0
 }
 
 func (a Num) Neq(b Num) bool {
-	return a.inner.Cmp(b.inner) != 0
+	return a.Inner.Cmp(b.Inner) != 0
 }
 
 func (a Num) BigInt() *big.Int {
-	return a.inner
+	return a.Inner
 }
