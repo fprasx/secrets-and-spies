@@ -1,4 +1,4 @@
-package commitmment
+package commitment
 
 import (
 	crand "crypto/rand"
