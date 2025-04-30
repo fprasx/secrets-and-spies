@@ -1,0 +1,32 @@
+package palette
+
+import "github.com/charmbracelet/lipgloss"
+
+var (
+	Base      = lipgloss.Color("#1e1e2e")
+	Mantle    = lipgloss.Color("#181825")
+	Crust     = lipgloss.Color("#11111b")
+	Text      = lipgloss.Color("#cdd6f4")
+	Subtext1  = lipgloss.Color("#bac2de")
+	Subtext0  = lipgloss.Color("#a6adc8")
+	Surface2  = lipgloss.Color("#585b70")
+	Surface1  = lipgloss.Color("#45475a")
+	Surface0  = lipgloss.Color("#313244")
+	Overlay2  = lipgloss.Color("#9399b2")
+	Overlay1  = lipgloss.Color("#7f849c")
+	Overlay0  = lipgloss.Color("#6c7086")
+	Blue      = lipgloss.Color("#89b4fa")
+	Lavender  = lipgloss.Color("#b4befe")
+	Sapphire  = lipgloss.Color("#74c7ec")
+	Sky       = lipgloss.Color("#89dceb")
+	Teal      = lipgloss.Color("#94e2d5")
+	Green     = lipgloss.Color("#a6e3a1")
+	Yellow    = lipgloss.Color("#f9e2af")
+	Peach     = lipgloss.Color("#fab387")
+	Maroon    = lipgloss.Color("#eba0ac")
+	Red       = lipgloss.Color("#f38ba8")
+	Mauve     = lipgloss.Color("#cba6f7")
+	Pink      = lipgloss.Color("#f5c2e7")
+	Flamingo  = lipgloss.Color("#f2cdcd")
+	Rosewater = lipgloss.Color("#f5e0dc")
+)

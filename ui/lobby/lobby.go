@@ -17,8 +17,7 @@ var (
 	appStyle     = lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center)
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
 	textStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
-
-	titleStyle = lipgloss.NewStyle().
+	titleStyle   = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#11111b")).
 			Background(lipgloss.Color("#f5c2e7")).
 			Padding(0, 1)
