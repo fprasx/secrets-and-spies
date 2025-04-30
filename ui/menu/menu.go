@@ -73,7 +73,7 @@ func newModel() model {
 					Description("Address of game host").
 					Validate(utils.ValidateAddr).
 					Placeholder("unix:///tmp/spies/alice"),
-			).WithHideFunc(func () bool { return Host }),
+			).WithHideFunc(func() bool { return Host }),
 		).
 			WithWidth(minWidth).
 			WithTheme(huh.ThemeCatppuccin()).

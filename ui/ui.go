@@ -96,6 +96,47 @@ var (
 	}
 )
 
+// TODO: maybe not hard code this here
+var (
+	cities = []board.City{
+		{Name: "Fugging, Austria", Color: "#ff0000"},
+		{Name: "Poo, Spain", Color: "#00ff00"},
+		{Name: "Bastardo, Italy", Color: "#0000ff"},
+		{Name: "Condom, France", Color: "#ff0000"},
+		{Name: "Batman, Turkey", Color: "#ff0000"},
+		{Name: "Vienna, Austria", Color: "#ff0000"},
+		{Name: "Berlin, Germany", Color: "#00ff00"},
+		{Name: "Paris, France", Color: "#0000ff"},
+		{Name: "Madrid, Spain", Color: "#ffff00"},
+		{Name: "Rome, Italy", Color: "#ff00ff"},
+		{Name: "Warsaw, Poland", Color: "#00ffff"},
+		{Name: "Prague, Czech Republic", Color: "#800000"},
+		{Name: "Amsterdam, Netherlands", Color: "#008000"},
+		{Name: "Copenhagen, Denmark", Color: "#000080"},
+		{Name: "Lisbon, Portugal", Color: "#808000"},
+		{Name: "Oslo, Norway", Color: "#800080"},
+	}
+	edges = map[int][]int{
+		0:  {3, 7},
+		1:  {10, 6},
+		2:  {8, 15, 7},
+		3:  {0, 12, 5, 7},
+		4:  {12},
+		5:  {10, 3, 12},
+		6:  {1, 7},
+		7:  {0, 2, 3, 6, 9, 14, 15},
+		8:  {2},
+		9:  {7},
+		10: {1, 5},
+		11: {13, 15},
+		12: {3, 4, 5, 13, 15},
+		13: {11, 12, 15},
+		14: {7},
+		15: {2, 7, 11, 12, 13},
+	}
+	initialLocation = board.City{Name: "Poo, Spain", Color: "#00ff00"}
+)
+
 type model struct {
 	service *service.Spies
 	board   *board.Board
@@ -120,6 +161,7 @@ func newModel(service *service.Spies) *model {
 		buttons: buttons,
 		service: service,
 		active:  capture,
+		board:   board.NewBoard(cities, edges, initialLocation),
 	}
 }
 
@@ -136,11 +178,13 @@ func (m *model) cursorRight() {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = min(msg.Width, 80)
+		m.width = msg.Width
 		m.height = msg.Height
 	case tea.KeyMsg:
 		switch {
@@ -167,6 +211,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	_, cmd = m.board.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -186,24 +233,27 @@ func (m *model) viewButtons() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, buttons...)
 }
 
-func (m *model) viewAppBorder(text string) string {
-	return lipgloss.PlaceHorizontal(
-		m.width,
-		lipgloss.Left,
-		headerStyle.Render(text),
-		lipgloss.WithWhitespaceChars("/"),
-		lipgloss.WithWhitespaceForeground(palette.Blue),
-	)
-}
+// func (m *model) viewAppBorder(text string) string {
+// 	return lipgloss.PlaceHorizontal(
+// 		m.width,
+// 		lipgloss.Left,
+// 		headerStyle.Render(text),
+// 		lipgloss.WithWhitespaceChars("/"),
+// 		lipgloss.WithWhitespaceForeground(palette.Blue),
+// 	)
+// }
 
 func (m *model) View() string {
 	buttons := m.viewButtons()
-	header := m.viewAppBorder("Secrets and Spies ")
-	footer := m.viewAppBorder("")
+	// header := m.viewAppBorder("Secrets and Spies ")
+	// footer := m.viewAppBorder("")
 
-	return containerStyle.Render(
-		header + "\n" + buttons + "\n\n" + footer,
-	)
+	return containerStyle.
+		Width(m.width).
+		Height(m.height).
+		Render(
+			m.board.View() + "\n\n" + buttons + "\n\n\n",
+		)
 }
 
 func Show(service *service.Spies) {

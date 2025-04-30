@@ -58,9 +58,9 @@ func longestCityName(cities []City) int {
 }
 
 // initialLocation must be one of the specified cities
-func NewBoard(cities []City, edges map[int][]int, initialLocation City) Board {
+func NewBoard(cities []City, edges map[int][]int, initialLocation City) *Board {
 	activeLocation := indexOf(cities, initialLocation)
-	return Board{
+	return &Board{
 		activeLocation:   activeLocation,
 		cities:           cities,
 		edges:            edges,
@@ -69,18 +69,18 @@ func NewBoard(cities []City, edges map[int][]int, initialLocation City) Board {
 	}
 }
 
-func (board Board) Init() tea.Cmd {
+func (board *Board) Init() tea.Cmd {
 	return nil
 }
 
-func (board Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (board *Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "right":
+		case "down", "j":
 			board.currentSelection = board.nextCity()
-		case "left":
+		case "up", "k":
 			board.currentSelection = board.prevCity()
 		case "ctrl+c", "esc", "q":
 			return board, tea.Interrupt
@@ -96,11 +96,11 @@ func PadRight(s string, length int) string {
 	return s + strings.Repeat(" ", length-len(s))
 }
 
-func (b Board) activeCity() string {
+func (b *Board) activeCity() string {
 	return b.cities[b.activeLocation].Name
 }
 
-func (board Board) CreateTree() *tree.Tree {
+func (board *Board) CreateTree() *tree.Tree {
 	visited := make(map[int]bool)
 	queue := []int{board.activeLocation}
 	parent := make(map[int]int)
@@ -128,7 +128,7 @@ func (board Board) CreateTree() *tree.Tree {
 	return treebuilder[board.activeLocation]
 }
 
-func (board Board) View() string {
+func (board *Board) View() string {
 	var rows []string
 	for i := 0; i < 16; i += 4 {
 		var cells []string
