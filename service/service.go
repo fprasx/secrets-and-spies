@@ -334,3 +334,10 @@ func (s *Spies) MyPlayer() game.PlayerState {
 
 	return s.b.Players[s.me]
 }
+
+func (s *Spies) PlayerStates() []game.PlayerState {
+	s.Lock()
+	defer s.Unlock()
+
+	return slices.Clone(s.b.Players)
+}

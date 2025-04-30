@@ -97,24 +97,6 @@ var (
 	}
 )
 
-func createAdjacencyMatrix(edges map[int][]int) [][]int {
-	n := len(edges)
-	adj := make([][]int, n)
-	for i := range n {
-		adj[i] = make([]int, n)
-	}
-	for i := range n {
-		adj[i][i] = 1
-	}
-	for i := range n {
-		for neighbor := range edges[i] {
-			adj[i][neighbor] = 1
-			adj[neighbor][i] = 1
-		}
-	}
-	return adj
-}
-
 // TODO: maybe not hard code this here
 var (
 	cities = []board.City{
@@ -204,6 +186,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	player := m.service.MyPlayer()
 	m.board.ActiveLocation = player.City
 
+	revealed := []int{}
+	states := m.service.PlayerStates()
+
+	for i := range states {
+		if states[i].Revealed {
+			revealed = append(revealed, states[i].City)
+		}
+	}
+
+	m.board.Revealed = revealed
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -222,15 +215,39 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, tea.Quit)
 		case key.Matches(msg, keys.Confirm):
 			if m.service.IsMyTurn() {
+				currentLocation := m.board.ActiveLocation
+				currentSelection := m.board.Edges[m.board.ActiveLocation][m.board.CurrentSelection]
+				active := m.active
+
 				m.service.DoTurn(func(s *service.Spies) game.Action {
-					return game.Action{
-						Type:       game.Move,
-						TargetCity: 1,
+					log.Printf("currentSelection: %v", currentSelection)
+
+					switch active {
+					case move:
+						return game.Action{
+							Type:       game.Move,
+							TargetCity: currentSelection,
+						}
+					case strike:
+						return game.Action{
+							Type: game.Strike,
+						}
+					default:
+						return game.Action{
+							Type:       game.Move,
+							TargetCity: currentLocation,
+						}
 					}
+
 				})
+
+				cmds = append(cmds, func() tea.Msg { return struct{}{} })
 			}
 		}
 	}
+
+	player = m.service.MyPlayer()
+	m.board.ActiveLocation = player.City
 
 	if !m.service.IsMyTurn() {
 		m.service.DoTurn(func(s *service.Spies) game.Action { return game.Action{} })
