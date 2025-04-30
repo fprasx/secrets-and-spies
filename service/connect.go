@@ -13,7 +13,7 @@ type ConnectReply struct {
 	You int
 }
 
-func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
+func (s *Spies) ConnectRPC(args *ConnectArgs, reply *ConnectReply) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -21,7 +21,7 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 		return fmt.Errorf("Cannot connect to non-host")
 	}
 
-	if s.state != stateInit {
+	if s.started {
 		return fmt.Errorf("Cannot join non-lobby game")
 	}
 
@@ -42,7 +42,7 @@ func (e *Peer) Connect(peer Peer) (int, error) {
 	args.Peer = peer
 
 	for {
-		err := e.Call("Spies.Connect", &args, &reply)
+		err := e.Call("Spies.ConnectRPC", &args, &reply)
 		if err == nil {
 			break
 		}

@@ -66,7 +66,7 @@ func (a Num) Times(b Num) Num {
 }
 
 func (a Num) Div(b Num) Num {
-    return a.Times(b.Inv())
+	return a.Times(b.Inv())
 }
 
 func (a Num) Inv() Num {

@@ -14,25 +14,20 @@ import (
 
 type state int
 
-const (
-	stateInit state = iota
-	stateSeed
-)
-
 type Spies struct {
-	state state
-	lock  sync.Mutex // lock to protect shared access to peer state
-	me    int        // unique id, assigned by host
-	next  int        // next unique id to be assigned by host
-	peer  Peer       // my network address
-	peers []Peer     // list of other peer endpoints
+	started bool       // true if the game has started
+	lock    sync.Mutex // lock to protect shared access to peer state
+	me      int        // unique id, assigned by host
+	next    int        // next unique id to be assigned by host
+	peer    Peer       // my network address
+	peers   []Peer     // list of other peer endpoints
 }
 
 func (s *Spies) Started() bool {
 	s.Lock()
 	defer s.Unlock()
 
-	return s.state != stateInit
+	return s.started
 }
 
 func (s *Spies) Peers() []Peer {
@@ -101,7 +96,7 @@ func New(hostname string) *Spies {
 	}
 
 	s.peer = Peer{Addr: addr}
-	s.state = stateInit
+	s.started = false
 	s.peers = []Peer{}
 	s.me = -1
 	s.next = -1
@@ -189,7 +184,7 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 
 func (s *Spies) HostStart() {
 	s.Lock()
-	if s.state != stateInit {
+	if s.started {
 		return
 	}
 
@@ -200,6 +195,6 @@ func (s *Spies) HostStart() {
 	s.Broadcast(func(e *Peer) { e.Start(peers) })
 
 	s.Lock()
-	s.state = stateSeed
+	s.started = true
 	s.Unlock()
 }
