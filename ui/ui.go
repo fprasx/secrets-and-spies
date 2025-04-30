@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/fprasx/secrets-and-spies/game"
 	"github.com/fprasx/secrets-and-spies/service"
 	"github.com/fprasx/secrets-and-spies/ui/board"
 	"github.com/fprasx/secrets-and-spies/ui/button"
@@ -198,7 +199,20 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, keys.Quit):
 			cmds = append(cmds, tea.Quit)
+		case key.Matches(msg, keys.Confirm):
+			if m.service.IsMyTurn() {
+				m.service.DoTurn(func(s *service.Spies) game.Action {
+					return game.Action{
+						Type:       game.Move,
+						TargetCity: 1,
+					}
+				})
+			}
 		}
+	}
+
+	if !m.service.IsMyTurn() {
+		m.service.DoTurn(func(s *service.Spies) game.Action { return game.Action{} })
 	}
 
 	for i := range m.buttons {

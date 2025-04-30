@@ -99,10 +99,6 @@ func (s *Spies) serve() {
 	}()
 }
 
-// alice := service.New("unix:/tmp/spies/a").WithName("Alice").WithHost(true)
-//bob := service.New("unix:/tmp/spies/b").WithName("Bob").WithHost(false)
-// bob.Join("unix:/tmp/spies/a")
-
 func New(hostname string) *Spies {
 	s := new(Spies)
 
@@ -118,9 +114,27 @@ func New(hostname string) *Spies {
 	s.me = -1
 	s.next = -1
 
+	t := 2
+	s.b = game.NewBoard(4, 2,
+		[][]int{{1, 1, 1, 1},
+			{1, 1, 0, 1},
+			{1, 0, 1, 1},
+			{1, 1, 1, 1}}, []int{0, 1}, t, ff.New(1))
+	s.actionSent = false
+	s.Shares = make([][][][2]ff.Num, len(s.b.Players))
+	s.NewShares = make([][][2]ff.Num, len(s.b.Players))
+	s.EndRound = true
+
 	s.serve()
 
 	return s
+}
+
+func (s *Spies) IsMyTurn() bool {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.b.Turn == s.me
 }
 
 func (s *Spies) WithName(name string) *Spies {
@@ -200,15 +214,15 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 
 func (s *Spies) PlayGame() {
 	t := 2
-	s.b = game.NewBoard(4, 2,
-		[][]int{{1, 1, 1, 1},
-			{1, 1, 0, 1},
-			{1, 0, 1, 1},
-			{1, 1, 1, 1}}, []int{0, 1}, t, ff.New(1))
-	s.actionSent = false
-	s.Shares = make([][][][2]ff.Num, len(s.b.Players))
-	s.NewShares = make([][][2]ff.Num, len(s.b.Players))
-	s.EndRound = true
+	// s.b = game.NewBoard(4, 2,
+	// 	[][]int{{1, 1, 1, 1},
+	// 		{1, 1, 0, 1},
+	// 		{1, 0, 1, 1},
+	// 		{1, 1, 1, 1}}, []int{0, 1}, t, ff.New(1))
+	// s.actionSent = false
+	// s.Shares = make([][][][2]ff.Num, len(s.b.Players))
+	// s.NewShares = make([][][2]ff.Num, len(s.b.Players))
+	// s.EndRound = true
 	s.Lock()
 	for s.started == false {
 		s.Unlock()

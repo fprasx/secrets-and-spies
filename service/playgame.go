@@ -164,12 +164,15 @@ func WaitForConfirmation(spies *Spies) bool {
 	}
 	return true
 }
-func (spies *Spies) DoTurn(b *game.Board, playerID int, shares [][][2]ff.Num, WaitForAction func(*Spies) game.Action) error {
+func (spies *Spies) DoTurn(WaitForAction func(*Spies) game.Action) error {
+	b := spies.b
+	playerID := spies.me
+
 	b.StartTurn()
 	if b.Turn == playerID {
 		spies.MyTurn(b, playerID, WaitForAction)
 	} else {
-		spies.OpponentTurn(b, b.Turn, playerID, shares)
+		spies.OpponentTurn(b, b.Turn, playerID)
 	}
 	log.Println("asdfdafa?")
 	spies.Lock()
@@ -272,7 +275,7 @@ func GetLocation(target int, spies *Spies) int {
 	return 0
 }
 
-func (spies *Spies) OpponentTurn(b *game.Board, playerID int, meID int, shares [][][2]ff.Num) int {
+func (spies *Spies) OpponentTurn(b *game.Board, playerID int, meID int) int {
 
 	player := &b.Players[playerID]
 	if player.Dead {
@@ -317,26 +320,27 @@ func (spies *Spies) OpponentTurn(b *game.Board, playerID int, meID int, shares [
 			// for {
 			// 	time.Sleep(10 * time.Millisecond)
 			// }
-		case game.Strike:
-			dotShares := make([][2]ff.Num, len(b.Players))
-			for oppo, _ := range b.Players {
-				dotShares[oppo] = bgw.DotProductShares(shares[oppo], shares[playerID], len(b.Players))
-				RPCSendNum(dotShares[oppo][1], oppo)
-				// if (j.HasStrikeRep){
-				// 	RPCSendVec(shares[playerID], oppo)
-				// }
-			}
-			SendDotProducts(dotShares, spies)
-			if RPCReceiveDotProductResult(spies) != 0 {
-				b.Players[meID].Dead = true
-
-			}
+			// case game.Strike:
+			// 	dotShares := make([][2]ff.Num, len(b.Players))
+			// 	for oppo, _ := range b.Players {
+			// 		dotShares[oppo] = bgw.DotProductShares(shares[oppo], shares[playerID], len(b.Players))
+			// 		RPCSendNum(dotShares[oppo][1], oppo)
+			// 		// if (j.HasStrikeRep){
+			// 		// 	RPCSendVec(shares[playerID], oppo)
+			// 		// }
+			// 	}
+			// 	SendDotProducts(dotShares, spies)
+			// 	if RPCReceiveDotProductResult(spies) != 0 {
+			// 		b.Players[meID].Dead = true
+			//
+			// 	}
 		}
 
 	}
 	return 0
 }
-func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(*Spies) game.Action) int {
+
+func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(s *Spies) game.Action) int {
 	player := &b.Players[playerID]
 	if player.Dead {
 		return 0
