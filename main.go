@@ -15,5 +15,6 @@ func init() {
 func main() {
 	menu.Show()
 	service := lobby.Show()
+	service.PlayGame()
 	ui.Show(service)
 }

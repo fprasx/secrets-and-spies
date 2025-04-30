@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/fprasx/secrets-and-spies/bgw"
@@ -20,23 +20,23 @@ type ActionReply struct {
 }
 
 func (s *Spies) RPCSendAction(args *ActionArgs, reply *ActionReply) error {
-	fmt.Printf("asdfafas\n")
+	log.Printf("asdfafas\n")
 
 	s.Lock()
 
 	for s.b.TurnNumber != args.TurnNumber || !s.EndRound {
-		fmt.Printf("turn: %v %v %v\n", s.b.TurnNumber, args.TurnNumber, s.EndRound)
+		log.Printf("turn: %v %v %v\n", s.b.TurnNumber, args.TurnNumber, s.EndRound)
 		s.Unlock()
 		time.Sleep(10 * time.Millisecond)
 		s.Lock()
 	}
 	defer s.Unlock()
-	fmt.Printf("hhhh%v %v\n", args.A, s.b.TurnNumber)
+	log.Printf("hhhh%v %v\n", args.A, s.b.TurnNumber)
 	s.actionSent = true
 	s.EndRound = false
 	s.OppoAction = args.A
 	if args.A.Type == game.Move {
-		fmt.Printf("shares%v \n", args.Shares)
+		log.Printf("shares%v \n", args.Shares)
 		s.NewShares = args.Shares
 	}
 	return nil
@@ -50,9 +50,9 @@ func (e *Peer) SendAction(action game.Action, turnNumber int, shares [][][2]ff.N
 	args.TurnNumber = turnNumber
 	args.Shares = shares
 	for {
-		fmt.Printf("sending action\n")
+		log.Printf("sending action\n")
 		err := e.Call("Spies.RPCSendAction", &args, &reply)
-		fmt.Printf("err: %v\n", err)
+		log.Printf("err: %v\n", err)
 		if err == nil {
 			break
 		}
@@ -80,13 +80,13 @@ func (s *Spies) RPCSendLocation(args *LocationShareArgs, reply *LocationShareRep
 	}
 
 	for s.b.TurnNumber != args.TurnNumber {
-		//fmt.Printf("turn: %v %v\n", s.b.TurnNumber, args.TurnNumber)
+		//log.Printf("turn: %v %v\n", s.b.TurnNumber, args.TurnNumber)
 		s.Unlock()
 		time.Sleep(10 * time.Millisecond)
 		s.Lock()
 	}
 	defer s.Unlock()
-	fmt.Printf("received location %v %v\n", args.Player, s.b.TurnNumber)
+	log.Printf("received location %v %v\n", args.Player, s.b.TurnNumber)
 	s.Shares[args.Player] = args.Shares
 	s.receivedNumber++
 	return nil
@@ -101,7 +101,7 @@ func (e *Peer) SendLocation(shares [][][2]ff.Num, turnNumber int, player int) er
 	args.TurnNumber = turnNumber
 	for {
 		err := e.Call("Spies.RPCSendLocation", &args, &reply)
-		fmt.Printf("err: %v\n", err)
+		log.Printf("err: %v\n", err)
 		if err == nil {
 			break
 		}
@@ -121,13 +121,13 @@ type ConfirmationReply struct {
 func (s *Spies) RPCConfirmation(args *ConfirmationArgs, reply *ConfirmationReply) error {
 	s.Lock()
 	for s.b.TurnNumber != args.TurnNumber {
-		//fmt.Printf("turn: %v %v\n", s.b.TurnNumber, args.TurnNumber)
+		//log.Printf("turn: %v %v\n", s.b.TurnNumber, args.TurnNumber)
 		s.Unlock()
 		time.Sleep(10 * time.Millisecond)
 		s.Lock()
 	}
 	defer s.Unlock()
-	fmt.Printf("received confirmation %v %v\n", args.Player, s.b.TurnNumber)
+	log.Printf("received confirmation %v %v\n", args.Player, s.b.TurnNumber)
 	s.ConfirmCount++
 	return nil
 }
@@ -137,10 +137,10 @@ func (e *Peer) SendConfirmation(turnNumber int, player int) error {
 	var reply LocationShareReply
 	args.Player = player
 	args.TurnNumber = turnNumber
-	fmt.Println("send that confirmation")
+	log.Println("send that confirmation")
 	for {
 		err := e.Call("Spies.RPCConfirmation", &args, &reply)
-		fmt.Printf("err: %v\n", err)
+		log.Printf("err: %v\n", err)
 		if err == nil {
 			break
 		}
@@ -151,11 +151,11 @@ func (e *Peer) SendConfirmation(turnNumber int, player int) error {
 
 func WaitForConfirmation(spies *Spies) bool {
 	for {
-		//	fmt.Println("coming")
+		//	log.Println("coming")
 		spies.Lock()
-		//	fmt.Println("come")
+		//	log.Println("come")
 		if spies.ConfirmCount == len(spies.peers)-1 {
-			fmt.Println("done")
+			log.Println("done")
 			spies.Unlock()
 			return true
 		}
@@ -171,9 +171,9 @@ func (spies *Spies) DoTurn(b *game.Board, playerID int, shares [][][2]ff.Num, Wa
 	} else {
 		spies.OpponentTurn(b, b.Turn, playerID, shares)
 	}
-	fmt.Println("asdfdafa?")
+	log.Println("asdfdafa?")
 	spies.Lock()
-	fmt.Println("asdfdafa")
+	log.Println("asdfdafa")
 	spies.ConfirmCount = 0
 	spies.actionSent = false
 	b.CleanupTurn()
@@ -200,7 +200,7 @@ func RPCReceiveVec(spies *Spies) [][2]ff.Num {
 // receives the shares of the dot products of new and old locations from every party and reconstructs secret
 func RPCReceiveAndValidate(spies *Spies, player int) bool {
 	//endshares := make([][2]ff.Num, len(spies.peers))
-	fmt.Printf("new shares %v cities: %v\n", spies.NewShares, spies.b.NoCities)
+	log.Printf("new shares %v cities: %v\n", spies.NewShares, spies.b.NoCities)
 	loc1 := 0
 	for i := 0; i < spies.b.NoCities; i++ {
 		c, _ := bgw.ReconstructSecret(spies.Shares[spies.me][i])
@@ -212,7 +212,7 @@ func RPCReceiveAndValidate(spies *Spies, player int) bool {
 	for i := 0; i < spies.b.NoCities; i++ {
 		c, _ := bgw.ReconstructSecret(spies.NewShares[i])
 		if c.Eq(ff.New(1)) {
-			fmt.Printf("my loc %v his loc %v\n", loc1, i)
+			log.Printf("my loc %v his loc %v\n", loc1, i)
 			if loc1 == i {
 				return true
 			}
@@ -220,9 +220,9 @@ func RPCReceiveAndValidate(spies *Spies, player int) bool {
 		}
 	}
 	// loc1, _ := bgw.ReconstructSecret(spies.Shares[spies.me][1])
-	// fmt.Printf("my loc loc1?: %v\n", loc1)
+	// log.Printf("my loc loc1?: %v\n", loc1)
 	// loc2, _ := bgw.ReconstructSecret(spies.NewShares[1])
-	// fmt.Printf("his loc loc1?: %v\n", loc2)
+	// log.Printf("his loc loc1?: %v\n", loc2)
 	// for i := 0; i < len(spies.peers); i++ {
 	// 	columnold := make([][2]ff.Num, spies.b.NoCities)
 	// 	for j := 0; j < spies.b.NoCities; j++ {
@@ -237,7 +237,7 @@ func RPCReceiveAndValidate(spies *Spies, player int) bool {
 	// }
 
 	//	res, _ := bgw.ReconstructSecret(endshares)
-	//	fmt.Printf("dot prod?: %v\n", loc2)
+	//	log.Printf("dot prod?: %v\n", loc2)
 	return false
 }
 
@@ -248,7 +248,7 @@ func RPCReceiveAndValidate(spies *Spies, player int) bool {
 // Returns a default game.Action for demonstration purposes.
 
 func WaitForOpponentAction(spies *Spies) game.Action {
-	fmt.Println("Waiting for opponent action")
+	log.Println("Waiting for opponent action")
 	spies.Lock()
 	for !spies.actionSent {
 		spies.Unlock()
@@ -256,7 +256,7 @@ func WaitForOpponentAction(spies *Spies) game.Action {
 		spies.Lock()
 	}
 	spies.Unlock()
-	fmt.Printf("Received action %v\n", spies.OppoAction)
+	log.Printf("Received action %v\n", spies.OppoAction)
 
 	return spies.OppoAction
 }
@@ -303,9 +303,9 @@ func (spies *Spies) OpponentTurn(b *game.Board, playerID int, meID int, shares [
 
 			if RPCReceiveAndValidate(spies, playerID) {
 				b.RevealPlayer(playerID, b.Players[meID].City)
-				fmt.Printf("He moved to me!\n")
+				log.Printf("He moved to me!\n")
 			} else {
-				fmt.Printf("He not moved to me!")
+				log.Printf("He not moved to me!")
 			}
 			spies.Shares[playerID] = spies.NewShares
 			spies.Lock()
@@ -346,7 +346,7 @@ func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(*Spie
 		action := WaitForAction(spies)
 		switch action.Type {
 		case game.Move:
-			fmt.Printf("move to %d\n", action.TargetCity)
+			log.Printf("move to %d\n", action.TargetCity)
 			//TODO: Broadcast Move
 			shares, _ := bgw.ShareLocation(action.TargetCity, b.NoCities, b.T, len(b.Players))
 			for peer := range spies.Peers() {
@@ -384,7 +384,7 @@ func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(*Spie
 			if err != nil {
 				return -1
 			}
-			fmt.Printf("Done turn %v\n", b.TurnNumber)
+			log.Printf("Done turn %v\n", b.TurnNumber)
 
 		case game.Strike:
 			//TODO: Broadcast strike move

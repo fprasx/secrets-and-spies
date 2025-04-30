@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/gob"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -76,7 +77,7 @@ func RegisterRpcTypes() {
 
 func RegisterLogger() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	//log.SetOutput(io.Discard)
+	log.SetOutput(io.Discard)
 }
 
 func AddrString(addr net.Addr) string {

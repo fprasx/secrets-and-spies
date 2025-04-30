@@ -1,12 +1,11 @@
 package service
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/rpc"
 	"os"
-	"strconv"
+	// "strconv"
 	"sync"
 	"time"
 
@@ -162,7 +161,7 @@ func (s *Spies) Join(hostname string) *Spies {
 	s.Lock()
 	peer := s.peer
 	s.Unlock()
-	fmt.Printf("me %v \n", s.me)
+	log.Printf("me %v \n", s.me)
 	me, err := end.Connect(peer)
 
 	if err != nil {
@@ -217,7 +216,7 @@ func (s *Spies) PlayGame() {
 		s.Lock()
 	}
 	s.Unlock()
-	fmt.Printf("STARTED %v\n", s.me)
+	log.Printf("STARTED %v\n", s.me)
 	shares, _ := bgw.ShareLocation(s.b.Players[s.me].City, s.b.NoCities, t, len(s.b.Players))
 	for i := range s.b.Players {
 		column := make([][2]ff.Num, s.b.NoCities)
@@ -248,42 +247,42 @@ func (s *Spies) PlayGame() {
 		s.Lock()
 	}
 	s.Unlock()
-	fmt.Println("all locations received")
-	index := 0
-	var actions []string
-	if s.me == 0 {
-
-		actions = []string{"m1", "m1", "m0", "m0"}
-	} else {
-		actions = []string{"m0", "m0", "m3", "m3"}
-	}
-
-	for {
-
-		s.DoTurn(s.b, s.me, nil, func(spies *Spies) game.Action {
-			if index >= len(actions) {
-				fmt.Println("Ran out of actions")
-				for {
-					time.Sleep(10 * time.Millisecond)
-				}
-			}
-			input := actions[index]
-			index++
-			if input[0:1] == "m" {
-				city, _ := strconv.Atoi(input[1:])
-				return game.Action{
-					Type:       game.Move,
-					TargetCity: city,
-				}
-			}
-			panic("invalid input")
-			return game.Action{}
-			// return game.Action{
-			// 	Type:       game.Move,
-			// 	TargetCity: 1,
-			// }
-		})
-	}
+	// log.Println("all locations received")
+	// index := 0
+	// var actions []string
+	// if s.me == 0 {
+	//
+	// 	actions = []string{"m1", "m1", "m0", "m0"}
+	// } else {
+	// 	actions = []string{"m0", "m0", "m3", "m3"}
+	// }
+	//
+	// for {
+	//
+	// 	s.DoTurn(s.b, s.me, nil, func(spies *Spies) game.Action {
+	// 		if index >= len(actions) {
+	// 			log.Println("Ran out of actions")
+	// 			for {
+	// 				time.Sleep(10 * time.Millisecond)
+	// 			}
+	// 		}
+	// 		input := actions[index]
+	// 		index++
+	// 		if input[0:1] == "m" {
+	// 			city, _ := strconv.Atoi(input[1:])
+	// 			return game.Action{
+	// 				Type:       game.Move,
+	// 				TargetCity: city,
+	// 			}
+	// 		}
+	// 		panic("invalid input")
+	// 		return game.Action{}
+	// 		// return game.Action{
+	// 		// 	Type:       game.Move,
+	// 		// 	TargetCity: 1,
+	// 		// }
+	// 	})
+	// }
 }
 func (s *Spies) HostStart() {
 	s.Lock()

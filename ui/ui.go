@@ -233,20 +233,8 @@ func (m *model) viewButtons() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, buttons...)
 }
 
-// func (m *model) viewAppBorder(text string) string {
-// 	return lipgloss.PlaceHorizontal(
-// 		m.width,
-// 		lipgloss.Left,
-// 		headerStyle.Render(text),
-// 		lipgloss.WithWhitespaceChars("/"),
-// 		lipgloss.WithWhitespaceForeground(palette.Blue),
-// 	)
-// }
-
 func (m *model) View() string {
 	buttons := m.viewButtons()
-	// header := m.viewAppBorder("Secrets and Spies ")
-	// footer := m.viewAppBorder("")
 
 	return containerStyle.
 		Width(m.width).
