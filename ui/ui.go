@@ -82,15 +82,13 @@ type buttonContent struct {
 }
 
 const (
-	capture = iota
-	wait
+	wait = iota
 	strike
 	move
 )
 
 var (
 	buttonContents = []buttonContent{
-		{title: "Capture", description: "Capture this city"},
 		{title: "Wait", description: "Stay at this city"},
 		{title: "Strike", description: "Strike this city"},
 		{title: "Move", description: "Move to city"},
@@ -134,7 +132,6 @@ var (
 		14: {7},
 		15: {2, 7, 11, 12, 13},
 	}
-	initialLocation = board.City{Name: "Poo, Spain", Color: "#00ff00"}
 )
 
 type model struct {
@@ -161,8 +158,8 @@ func newModel(service *service.Spies) *model {
 	return &model{
 		buttons: buttons,
 		service: service,
-		active:  capture,
-		board:   board.NewBoard(cities, edges, initialLocation),
+		active:  wait,
+		board:   board.NewBoard(cities, edges),
 		dead:    false,
 	}
 }

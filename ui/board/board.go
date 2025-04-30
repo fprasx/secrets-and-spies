@@ -60,10 +60,9 @@ func longestCityName(cities []City) int {
 }
 
 // initialLocation must be one of the specified cities
-func NewBoard(cities []City, edges map[int][]int, initialLocation City) *Board {
-	activeLocation := indexOf(cities, initialLocation)
+func NewBoard(cities []City, edges map[int][]int) *Board {
 	return &Board{
-		ActiveLocation:   activeLocation,
+		ActiveLocation:   0,
 		Cities:           cities,
 		Edges:            edges,
 		MaxNameLen:       longestCityName(cities),
@@ -172,7 +171,7 @@ func (board *Board) View() string {
 }
 
 func Show(cities []City, edges map[int][]int, initialLocation City) {
-	if _, err := tea.NewProgram(NewBoard(cities, edges, initialLocation)).Run(); err != nil {
+	if _, err := tea.NewProgram(NewBoard(cities, edges)).Run(); err != nil {
 		log.Fatal(err)
 	}
 }
