@@ -97,6 +97,21 @@ var (
 	}
 )
 
+func createAdjacencyMatrix(edges map[int][]int) [][]int {
+	n := len(edges)
+	adj := make([][]int, n)
+	for i := range n {
+		adj[i] = make([]int, n)
+	}
+	for i := range n {
+		for neighbor := range edges[i] {
+			adj[i][neighbor] = 1
+			adj[neighbor][i] = 1
+		}
+	}
+	return adj
+}
+
 // TODO: maybe not hard code this here
 var (
 	cities = []board.City{
