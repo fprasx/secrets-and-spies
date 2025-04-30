@@ -35,7 +35,7 @@ func createAdjacencyMatrix(edges map[int][]int) [][]int {
 		adj[i][i] = 1
 	}
 	for i := range n {
-		for neighbor := range edges[i] {
+		for _, neighbor := range edges[i] {
 			adj[i][neighbor] = 1
 			adj[neighbor][i] = 1
 		}
