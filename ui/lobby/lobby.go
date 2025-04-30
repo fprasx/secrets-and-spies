@@ -1,7 +1,6 @@
 package lobby
 
 import (
-	// "fmt"
 	"log"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -12,10 +11,6 @@ import (
 	"github.com/fprasx/secrets-and-spies/service"
 	"github.com/fprasx/secrets-and-spies/ui/menu"
 	"github.com/fprasx/secrets-and-spies/utils"
-)
-
-var (
-	Service *service.Spies
 )
 
 var (
@@ -49,8 +44,8 @@ type model struct {
 	loading bool
 	width   int
 	height  int
-	service *service.Spies
 	spinner spinner.Model
+	service *service.Spies
 	players list.Model
 }
 
@@ -80,8 +75,6 @@ func newModel() model {
 		}
 	}
 
-	Service = m.service
-
 	return m
 }
 
@@ -90,7 +83,9 @@ type startMsg struct{}
 
 func connectToHost(srv *service.Spies) func() tea.Msg {
 	return func() tea.Msg {
-		srv.Join(menu.HostAddress)
+		if !srv.IsHost() {
+			srv.Join(menu.HostAddress)
+		}
 		return joinMsg{}
 	}
 }
@@ -117,15 +112,14 @@ func (m *model) updatePeers() tea.Cmd {
 
 func startGame(srv *service.Spies) tea.Cmd {
 	return func() tea.Msg {
-		srv.Start()
+		srv.HostStart()
 		return startMsg{}
 	}
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if cmd := m.updatePeers(); cmd != nil {
-		return m, cmd
-	}
+	cmds := []tea.Cmd{}
+	cmds = append(cmds, m.updatePeers())
 
 	switch msg := msg.(type) {
 	case startMsg:
@@ -152,13 +146,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		cmds = append(cmds, cmd)
+	}
+
+	if m.service.Started() {
+		return m, func() tea.Msg { return startMsg{} }
 	}
 
 	var cmd tea.Cmd
 	m.players, cmd = m.players.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) viewLobby() string {
@@ -191,8 +190,10 @@ func (m model) View() string {
 
 }
 
-func Show() {
-	if _, err := tea.NewProgram(newModel()).Run(); err != nil {
+func Show() *service.Spies {
+	model := newModel()
+	if _, err := tea.NewProgram(model).Run(); err != nil {
 		log.Fatal(err)
 	}
+	return model.service
 }

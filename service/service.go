@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/rpc"
@@ -31,15 +30,31 @@ type Spies struct {
 	peers []Peer     // list of other peer endpoints
 }
 
+func (s *Spies) Started() bool {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.state != stateInit
+}
+
 func (s *Spies) Peers() []Peer {
+	s.Lock()
+	defer s.Unlock()
+
 	return slices.Clone(s.peers)
 }
 
 func (s *Spies) Players() int {
+	s.Lock()
+	defer s.Unlock()
+
 	return len(s.peers)
 }
 
 func (s *Spies) IsHost() bool {
+	s.Lock()
+	defer s.Unlock()
+
 	return s.me == 0
 }
 
@@ -121,9 +136,6 @@ func (s *Spies) WithHost(host bool) *Spies {
 }
 
 func (s *Spies) Join(hostname string) *Spies {
-	s.Lock()
-	defer s.Unlock()
-
 	if s.IsHost() {
 		return s
 	}
@@ -135,13 +147,20 @@ func (s *Spies) Join(hostname string) *Spies {
 	}
 
 	end := Peer{Addr: addr}
-	me, err := end.Connect(s.peer)
+
+	s.Lock()
+	peer := s.peer
+	s.Unlock()
+
+	me, err := end.Connect(peer)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	s.Lock()
 	s.me = me
+	s.Unlock()
 
 	return s
 }
@@ -172,12 +191,17 @@ func (s *Spies) Broadcast(thunk func(e *Peer)) {
 
 func (s *Spies) HostStart() {
 	s.Lock()
-	defer s.Unlock()
+	if s.state != stateInit {
+		return
+	}
 
 	peers := slices.Clone(s.peers)
+	utils.Assert(s.me == 0, "Expected to be host")
+	s.Unlock()
 
-	utils.Assert(s.state == stateInit, fmt.Sprintf("Expected state to be 0, instead %v", s.state))
-	utils.Assert(s.IsHost(), "Expected to be host")
+	s.Broadcast(func(e *Peer) { e.Start(peers) })
 
-	go s.Broadcast(func(e *Peer) { e.Start(peers) })
+	s.Lock()
+	s.state = stateSeed
+	s.Unlock()
 }

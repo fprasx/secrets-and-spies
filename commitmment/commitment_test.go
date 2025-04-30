@@ -1,13 +1,26 @@
 package commitmment_test
 
 import (
-	// "testing"
+	"testing"
 
-	// "github.com/fprasx/secrets-and-spies/commitmment"
+	"github.com/fprasx/secrets-and-spies/commitmment"
+	"github.com/fprasx/secrets-and-spies/utils"
 )
 
-// func Test1(t *testing.T) {
-// 	message := uint(0xdecaf)
-// 	commitment, s := commitmment.Commit(message)
-// 	commitmment.MustValidateCommitment(commitment, message, s)
-// }
+func TestSuccess(t *testing.T) {
+	message := uint(0xdecaf)
+	commitment, nonce := commitmment.Commit(message)
+	utils.Assert(
+		commitmment.Verify(commitment, message, nonce),
+		"failed to verify commitmment",
+	)
+}
+
+func TestFail(t *testing.T) {
+	message := uint(0xdecaf)
+	commitment, nonce := commitmment.Commit(message)
+	utils.Assert(
+		!commitmment.Verify(commitment, 0x4311, nonce),
+		"commitmment should not have verified",
+	)
+}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"slices"
 )
 
 type ConnectArgs struct {
@@ -16,7 +17,7 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 	s.Lock()
 	defer s.Unlock()
 
-	if !s.IsHost() {
+	if s.me != 0 {
 		return fmt.Errorf("Cannot connect to non-host")
 	}
 
@@ -28,7 +29,7 @@ func (s *Spies) Connect(args *ConnectArgs, reply *ConnectReply) error {
 	s.peers = append(s.peers, args.Peer)
 	s.next++
 
-	peers := s.Peers()
+	peers := slices.Clone(s.peers)
 	go s.Broadcast(func(p *Peer) { p.Lobby(peers) })
 
 	return nil

@@ -1,33 +1,30 @@
 package commitmment
 
 import (
-	// "math/rand"
+	crand "crypto/rand"
+	"math/big"
 
-	// "github.com/fprasx/secrets-and-spies/ff"
+	"github.com/fprasx/secrets-and-spies/ff"
 )
 
-// Completely secure implementation of Pederson commitmments in the group Z_(10**9+7)
+func PedersonParams() (g ff.Num, h ff.Num) {
+	g = ff.New(2)
+	h = ff.New(0xb1eed).Pow(ff.New(0xb100d).BigInt())
+	return
+}
 
-// https://datatracker.ietf.org/doc/html/rfc3526#page-3
+func Commit(value uint) (commitment *big.Int, nonce *big.Int) {
+	g, h := PedersonParams()
+	nonce, err := crand.Int(crand.Reader, ff.FieldPrime())
+	if err != nil {
+		panic("failed to generate nonce")
+	}
+	commitment = g.Pow(big.NewInt(int64(value))).Times(h.Pow(nonce)).BigInt()
+	return
+}
 
-const p = 1000000007
-
-// func PedersonParams() (g ff.Num, h ff.Num) {
-// 	g = ff.New(p, 0xdecaf).Pow(0xc0ffee)
-// 	h = ff.New(p, 0xb1eed).Pow(0xb100d)
-// 	return
-// }
-//
-// func Commit(value uint) (commitment ff.Num, nonce uint) {
-// 	g, h := PedersonParams()
-// 	nonce = uint(rand.Intn(p))
-// 	commitment = g.Pow(value).Times(h.Pow(nonce))
-// 	return
-// }
-//
-// func MustValidateCommitment(commitment ff.Num, value uint, nonce uint) {
-// 	g, h := PedersonParams()
-// 	if g.Pow(value).Times(h.Pow(nonce)) != commitment {
-// 		panic("invalid commitment")
-// 	}
-// }
+func Verify(commitment *big.Int, value uint, nonce *big.Int) bool {
+	g, h := PedersonParams()
+	recalculated := g.Pow(big.NewInt(int64(value))).Times(h.Pow(nonce))
+	return recalculated.BigInt().Cmp(commitment) == 0
+}
