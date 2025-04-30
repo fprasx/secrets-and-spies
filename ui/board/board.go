@@ -30,11 +30,11 @@ type Board struct {
 }
 
 func (b *Board) nextCity() int {
-	return (b.activeLocation + 1) % len(b.cities)
+	return (b.currentSelection + 1) % len(b.edges[b.activeLocation])
 }
 
 func (b *Board) prevCity() int {
-	return (b.activeLocation - 1 + len(b.cities)) % len(b.cities)
+	return (b.currentSelection - 1 + len(b.edges[b.activeLocation])) % len(b.edges[b.activeLocation])
 }
 
 // item must be in slice
@@ -65,7 +65,7 @@ func NewBoard(cities []City, edges map[int][]int, initialLocation City) Board {
 		cities:           cities,
 		edges:            edges,
 		maxNameLen:       longestCityName(cities),
-		currentSelection: edges[activeLocation][0],
+		currentSelection: 0,
 	}
 }
 
@@ -79,9 +79,9 @@ func (board Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "right":
-			board.activeLocation = board.nextCity()
+			board.currentSelection = board.nextCity()
 		case "left":
-			board.activeLocation = board.prevCity()
+			board.currentSelection = board.prevCity()
 		case "ctrl+c", "esc", "q":
 			return board, tea.Interrupt
 		}
@@ -129,7 +129,6 @@ func (board Board) CreateTree() *tree.Tree {
 }
 
 func (board Board) View() string {
-	fmt.Printf("")
 	var rows []string
 	for i := 0; i < 16; i += 4 {
 		var cells []string
@@ -142,12 +141,15 @@ func (board Board) View() string {
 
 			if i+j == board.activeLocation {
 				cellStyle = cellStyle.
-					BorderForeground(lipgloss.Color("#00ff00")).
-					Foreground(lipgloss.Color("#00ff00"))
+					BorderForeground(lipgloss.Color("#00ff00"))
 			} else if slices.Contains(board.edges[board.activeLocation], i+j) {
-				cellStyle = cellStyle.
-					BorderForeground(lipgloss.Color("#0000ff")).
-					Foreground(lipgloss.Color("#0000ff"))
+				if i+j == board.edges[board.activeLocation][board.currentSelection] {
+					cellStyle = cellStyle.
+						BorderForeground(lipgloss.Color("#0000ff"))
+				} else {
+					cellStyle = cellStyle.
+						BorderForeground(lipgloss.Color("#000080"))
+				}
 
 			}
 			cells = append(cells, cellStyle.Render(board.cities[i+j].Name))
