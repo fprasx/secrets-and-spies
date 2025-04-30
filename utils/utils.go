@@ -3,12 +3,13 @@ package utils
 import (
 	"encoding/gob"
 	"fmt"
-	"io"
+	// "io"
 	"io/fs"
 	"log"
 	"net"
 	"net/url"
 	"os"
+	"time"
 )
 
 func Assert(cond bool, msg string) {
@@ -77,7 +78,16 @@ func RegisterRpcTypes() {
 
 func RegisterLogger() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.SetOutput(io.Discard)
+	// Open or create the log file
+	timestamp := time.Now().Format("20060102_150405") // YYYYMMDD_HHMMSS
+	filename := fmt.Sprintf("%s_%s.log", "debug", timestamp)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Set log output to the file
+	log.SetOutput(f)
 }
 
 func AddrString(addr net.Addr) string {

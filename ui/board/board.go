@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/tree"
+	"github.com/fprasx/secrets-and-spies/ui/palette"
 )
 
 type City struct {
@@ -27,6 +28,7 @@ type Board struct {
 
 	// Interactive board info
 	CurrentSelection int
+	Revealed         []int
 }
 
 func (b *Board) nextCity() int {
@@ -65,6 +67,7 @@ func NewBoard(cities []City, edges map[int][]int, initialLocation City) *Board {
 		Cities:           cities,
 		Edges:            edges,
 		MaxNameLen:       longestCityName(cities),
+		Revealed:         []int{},
 		CurrentSelection: 0,
 	}
 }
@@ -139,7 +142,13 @@ func (board *Board) View() string {
 				Border(lipgloss.RoundedBorder()).
 				Margin(0, 1).MarginBottom(1)
 
-			if i+j == board.ActiveLocation {
+			if slices.Contains(board.Revealed, i+j) {
+				cellStyle = cellStyle.
+					BorderForeground(palette.Yellow)
+			} else if i+j == board.ActiveLocation && slices.Contains(board.Revealed, i+j) {
+				cellStyle = cellStyle.
+					BorderForeground(palette.Red)
+			} else if i+j == board.ActiveLocation {
 				cellStyle = cellStyle.
 					BorderForeground(lipgloss.Color("#00ff00"))
 			} else if slices.Contains(board.Edges[board.ActiveLocation], i+j) {

@@ -401,6 +401,7 @@ func (spies *Spies) MyTurn(b *game.Board, playerID int, WaitForAction func(s *Sp
 				return -1
 			}
 			log.Printf("Done turn %v\n", b.TurnNumber)
+			log.Printf("Player %v moved to city: %v\n", playerID, b.Players[playerID].City)
 
 		case game.Strike:
 			for peer := range spies.Peers() {
