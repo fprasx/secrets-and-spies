@@ -146,6 +146,7 @@ type model struct {
 	width   int
 	height  int
 	active  int
+	dead    bool
 }
 
 func newModel(service *service.Spies) *model {
@@ -163,6 +164,7 @@ func newModel(service *service.Spies) *model {
 		service: service,
 		active:  capture,
 		board:   board.NewBoard(cities, edges, initialLocation),
+		dead:    false,
 	}
 }
 
@@ -193,6 +195,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if states[i].Revealed {
 			revealed = append(revealed, states[i].City)
 		}
+	}
+
+	if player.Dead {
+		m.dead = true
 	}
 
 	m.board.Revealed = revealed
@@ -286,14 +292,23 @@ func (m *model) viewButtons() string {
 }
 
 func (m *model) View() string {
-	buttons := m.viewButtons()
+	if !m.dead {
+		buttons := m.viewButtons()
 
-	return containerStyle.
-		Width(m.width).
-		Height(m.height).
-		Render(
-			m.board.View() + "\n\n" + buttons + "\n\n\n",
-		)
+		return containerStyle.
+			Width(m.width).
+			Height(m.height).
+			Render(
+				m.board.View() + "\n\n" + buttons + "\n\n\n",
+			)
+	} else {
+		return containerStyle.
+			Width(m.width).
+			Height(m.height).
+			Foreground(palette.Red).
+			Bold(true).
+			Render("You have died")
+	}
 }
 
 func Show(service *service.Spies) {
